@@ -1,0 +1,758 @@
+// ============================================================
+// Sleep Tracker PWA — Main Application
+// ============================================================
+
+const DB_KEY = 'sleep_tracker_data';
+const SLEEP_KEY = 'sleep_tracker_pending';
+
+// ---- Data Layer ----
+// Data format: records[dateKey] = [ { bedtime, waketime, duration, rating, type }, ... ]
+
+function loadRecords() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DB_KEY)) || {};
+    // Migrate old single-object format to array format
+    for (const key of Object.keys(raw)) {
+      if (!Array.isArray(raw[key])) {
+        raw[key] = [raw[key]];
+      }
+    }
+    return raw;
+  } catch { return {}; }
+}
+
+function saveRecords(records) {
+  localStorage.setItem(DB_KEY, JSON.stringify(records));
+}
+
+function getPendingSleep() {
+  try {
+    return JSON.parse(localStorage.getItem(SLEEP_KEY));
+  } catch { return null; }
+}
+
+function setPendingSleep(data) {
+  if (data) {
+    localStorage.setItem(SLEEP_KEY, JSON.stringify(data));
+  } else {
+    localStorage.removeItem(SLEEP_KEY);
+  }
+}
+
+function dateKey(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function todayKey() {
+  return dateKey(new Date());
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function formatDuration(ms) {
+  const totalMin = Math.round(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}時間${m}分`;
+}
+
+function formatDurationShort(ms) {
+  const h = (ms / 3600000).toFixed(1);
+  return `${h}h`;
+}
+
+function ratingColor(r) {
+  if (r <= 3) return '#4ecdc4';
+  if (r <= 6) return '#ffe66d';
+  if (r <= 8) return '#ff9f43';
+  return '#ff6b6b';
+}
+
+function ratingClass(r) {
+  if (r <= 3) return 'good';
+  if (r <= 6) return 'ok';
+  return 'bad';
+}
+
+// Classify sleep type: night sleep vs nap
+function classifySleep(bedtimeISO, durationMs) {
+  const hour = new Date(bedtimeISO).getHours();
+  const isNightHour = hour >= 18 || hour <= 5;
+  const isLong = durationMs >= 3 * 3600000; // 3 hours+
+  if (isNightHour && isLong) return 'night';
+  return 'nap';
+}
+
+function typeLabel(type) {
+  return type === 'night' ? '🌙 夜の睡眠' : '💤 仮眠';
+}
+
+// ---- Navigation ----
+
+const views = document.querySelectorAll('.view');
+const navBtns = document.querySelectorAll('.nav-btn');
+
+function showView(name) {
+  views.forEach(v => v.classList.toggle('active', v.id === `view-${name}`));
+  navBtns.forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  if (name === 'home') updateHomeView();
+  if (name === 'history') renderHistory();
+  if (name === 'calendar') renderCalendar();
+  if (name === 'report') renderReport();
+}
+
+navBtns.forEach(btn => {
+  btn.addEventListener('click', () => showView(btn.dataset.view));
+});
+
+// ---- Home View ----
+
+let wakeTimeISO = null;
+
+function updateHomeView() {
+  const today = todayKey();
+  const records = loadRecords();
+  const pending = getPendingSleep();
+  const todaySessions = records[today] || [];
+
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('ja-JP', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+  });
+
+  const sleepSection = document.getElementById('sleep-section');
+  const wakeButtonSection = document.getElementById('wake-button-section');
+  const ratingSection = document.getElementById('rating-section');
+  const todaySessionsDiv = document.getElementById('today-sessions');
+
+  // Hide interactive sections
+  sleepSection.classList.add('hidden');
+  wakeButtonSection.classList.add('hidden');
+  ratingSection.classList.add('hidden');
+
+  if (pending) {
+    // Currently sleeping — show wake button
+    wakeButtonSection.classList.remove('hidden');
+    const bedtime = new Date(pending.bedtime);
+    const now = new Date();
+    const duration = now - bedtime;
+    document.getElementById('wake-bedtime').textContent = formatTime(pending.bedtime);
+    document.getElementById('wake-duration').textContent = formatDuration(duration);
+  } else {
+    // Show sleep button (always available for new session)
+    sleepSection.classList.remove('hidden');
+    document.getElementById('sleep-status').classList.remove('hidden');
+    document.getElementById('sleeping-status').classList.add('hidden');
+  }
+
+  // Show today's sessions
+  if (todaySessions.length > 0) {
+    todaySessionsDiv.classList.remove('hidden');
+    const list = document.getElementById('today-sessions-list');
+    list.innerHTML = '';
+    todaySessions.forEach((s, i) => {
+      const card = document.createElement('div');
+      card.className = 'session-card';
+      card.innerHTML = `
+        <div class="session-type">${typeLabel(s.type)}</div>
+        <div class="session-details">
+          <span>${formatTime(s.bedtime)} → ${formatTime(s.waketime)}</span>
+          <span>${formatDuration(s.duration)}</span>
+        </div>
+        <div class="session-rating">
+          <span class="rating-badge-sm" style="background:${ratingColor(s.rating)};color:${s.rating <= 6 ? '#0f0f1a' : 'white'}">${s.rating}</span>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    // Show total sleep today
+    const totalMs = todaySessions.reduce((s, r) => s + r.duration, 0);
+    const nightMs = todaySessions.filter(r => r.type === 'night').reduce((s, r) => s + r.duration, 0);
+    const napMs = todaySessions.filter(r => r.type === 'nap').reduce((s, r) => s + r.duration, 0);
+    let summary = `合計: ${formatDuration(totalMs)}`;
+    if (nightMs > 0 && napMs > 0) {
+      summary += `（夜: ${formatDuration(nightMs)} / 仮眠: ${formatDuration(napMs)}）`;
+    }
+    const sumEl = document.getElementById('today-summary') || document.createElement('p');
+    sumEl.id = 'today-summary';
+    sumEl.className = 'today-summary';
+    sumEl.textContent = summary;
+    if (!sumEl.parentNode) list.parentNode.insertBefore(sumEl, list);
+  } else {
+    todaySessionsDiv.classList.add('hidden');
+  }
+}
+
+// Sleep button (おやすみ)
+document.getElementById('btn-sleep').addEventListener('click', () => {
+  const now = new Date().toISOString();
+  setPendingSleep({ bedtime: now });
+  document.getElementById('sleep-status').classList.add('hidden');
+  document.getElementById('sleeping-status').classList.remove('hidden');
+  document.getElementById('bedtime-display').textContent = formatTime(now);
+});
+
+// Cancel sleep
+document.getElementById('btn-cancel-sleep').addEventListener('click', () => {
+  setPendingSleep(null);
+  updateHomeView();
+});
+document.getElementById('btn-cancel-sleep2').addEventListener('click', () => {
+  setPendingSleep(null);
+  updateHomeView();
+});
+
+// Wake up — shared logic
+function handleWakeUp() {
+  wakeTimeISO = new Date().toISOString();
+  const pending = getPendingSleep();
+  if (!pending) return;
+
+  const bedtime = new Date(pending.bedtime);
+  const wakeTime = new Date(wakeTimeISO);
+  const duration = wakeTime - bedtime;
+  const type = classifySleep(pending.bedtime, duration);
+
+  // Hide everything, show rating
+  document.getElementById('sleep-section').classList.add('hidden');
+  document.getElementById('wake-button-section').classList.add('hidden');
+  document.getElementById('rating-section').classList.remove('hidden');
+  document.getElementById('rating-duration').textContent = formatDuration(duration);
+  document.getElementById('sleep-type-label').textContent = typeLabel(type);
+  document.getElementById('rating-greeting').textContent = type === 'night' ? 'おはよう！' : 'お疲れさま！';
+  buildRatingGrid();
+}
+
+document.getElementById('btn-wake').addEventListener('click', handleWakeUp);
+document.getElementById('btn-wake-from-sleep').addEventListener('click', handleWakeUp);
+
+// Rating grid — tap to instantly save
+function buildRatingGrid() {
+  const grid = document.getElementById('rating-grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.className = `rating-btn r${i}`;
+    btn.textContent = i;
+    btn.addEventListener('click', () => saveRecord(i));
+    grid.appendChild(btn);
+  }
+}
+
+// Save record
+function saveRecord(rating) {
+  const pending = getPendingSleep();
+  if (!pending || !wakeTimeISO) return;
+
+  const bedtime = new Date(pending.bedtime);
+  const wakeTime = new Date(wakeTimeISO);
+  const duration = wakeTime - bedtime;
+  const type = classifySleep(pending.bedtime, duration);
+
+  // Record goes to the wake-up date
+  const key = dateKey(wakeTime);
+
+  const records = loadRecords();
+  if (!records[key]) records[key] = [];
+  records[key].push({
+    bedtime: pending.bedtime,
+    waketime: wakeTimeISO,
+    duration: duration,
+    rating: rating,
+    type: type
+  });
+
+  saveRecords(records);
+  setPendingSleep(null);
+  wakeTimeISO = null;
+  updateHomeView();
+}
+
+// ---- History (計測) View ----
+
+function renderHistory() {
+  const records = loadRecords();
+  const container = document.getElementById('history-list');
+
+  // Flatten and sort by date descending
+  const allDays = Object.keys(records).sort().reverse();
+
+  if (allDays.length === 0) {
+    container.innerHTML = `
+      <div class="no-data">
+        <div class="no-data-icon">⏱</div>
+        <p>まだ計測データがありません</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  for (const day of allDays) {
+    const sessions = records[day];
+    if (!sessions || sessions.length === 0) continue;
+
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'history-day';
+
+    const totalMs = sessions.reduce((s, r) => s + r.duration, 0);
+    const avgRating = (sessions.reduce((s, r) => s + r.rating, 0) / sessions.length).toFixed(1);
+
+    dayDiv.innerHTML = `<div class="history-day-header">
+      <span class="history-date">${formatDateLabel(day)}</span>
+      <span class="history-day-summary">${sessions.length}回 / ${formatDuration(totalMs)} / 気分 ${avgRating}</span>
+    </div>`;
+
+    sessions.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'history-session';
+      row.innerHTML = `
+        <span class="history-type">${typeLabel(s.type)}</span>
+        <span class="history-time">${formatTime(s.bedtime)} → ${formatTime(s.waketime)}</span>
+        <span class="history-dur">${formatDuration(s.duration)}</span>
+        <span class="rating-badge-sm" style="background:${ratingColor(s.rating)};color:${s.rating <= 6 ? '#0f0f1a' : 'white'}">${s.rating}</span>
+      `;
+      dayDiv.appendChild(row);
+    });
+
+    container.appendChild(dayDiv);
+  }
+}
+
+function formatDateLabel(key) {
+  const d = new Date(key + 'T00:00:00');
+  const today = todayKey();
+  const yesterday = dateKey(new Date(Date.now() - 86400000));
+  if (key === today) return '今日';
+  if (key === yesterday) return '昨日';
+  return d.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', weekday: 'short' });
+}
+
+// ---- Calendar View ----
+
+let calYear, calMonth;
+
+function initCalendar() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+}
+
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+
+document.getElementById('cal-next').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+
+function renderCalendar() {
+  const records = loadRecords();
+  const title = document.getElementById('cal-month-title');
+  title.textContent = `${calYear}年${calMonth + 1}月`;
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = todayKey();
+
+  // Previous month padding
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const btn = document.createElement('button');
+    btn.className = 'cal-day other-month';
+    btn.textContent = prevDays - i;
+    grid.appendChild(btn);
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const sessions = records[key] || [];
+    const btn = document.createElement('button');
+    btn.className = 'cal-day';
+    if (key === today) btn.classList.add('today');
+
+    if (sessions.length > 0) {
+      btn.classList.add('has-data');
+      const avgRating = Math.round(sessions.reduce((s, r) => s + r.rating, 0) / sessions.length);
+      const badge = document.createElement('span');
+      badge.className = `cal-rating ${ratingClass(avgRating)}`;
+      badge.textContent = sessions.length > 1 ? `${avgRating}×${sessions.length}` : avgRating;
+      btn.innerHTML = `<span>${d}</span>`;
+      btn.appendChild(badge);
+    } else {
+      btn.textContent = d;
+    }
+    btn.addEventListener('click', () => showCalDetail(key, sessions));
+    grid.appendChild(btn);
+  }
+
+  // Next month padding
+  const totalCells = firstDay + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'cal-day other-month';
+    btn.textContent = i;
+    grid.appendChild(btn);
+  }
+
+  document.getElementById('cal-detail').classList.add('hidden');
+}
+
+function showCalDetail(key, sessions) {
+  const detail = document.getElementById('cal-detail');
+  if (!sessions || sessions.length === 0) {
+    detail.innerHTML = `<h3>${key}</h3><p class="no-data">記録なし</p>`;
+  } else {
+    let html = `<h3>${key}（${sessions.length}回）</h3>`;
+    sessions.forEach(s => {
+      html += `
+        <div class="cal-session">
+          <span class="cal-session-type">${typeLabel(s.type)}</span>
+          <div class="record-details">
+            <div class="record-item">
+              <span class="record-label">就寝</span>
+              <span class="record-value">${formatTime(s.bedtime)}</span>
+            </div>
+            <div class="record-item">
+              <span class="record-label">起床</span>
+              <span class="record-value">${formatTime(s.waketime)}</span>
+            </div>
+            <div class="record-item">
+              <span class="record-label">睡眠時間</span>
+              <span class="record-value">${formatDuration(s.duration)}</span>
+            </div>
+            <div class="record-item">
+              <span class="record-label">気分</span>
+              <span class="record-value rating-badge" style="background:${ratingColor(s.rating)};color:${s.rating <= 6 ? '#0f0f1a' : 'white'}">${s.rating}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    const totalMs = sessions.reduce((s, r) => s + r.duration, 0);
+    html += `<p class="cal-total">合計睡眠: ${formatDuration(totalMs)}</p>`;
+    detail.innerHTML = html;
+  }
+  detail.classList.remove('hidden');
+}
+
+// ---- Report View ----
+
+let currentPeriod = 'week';
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPeriod = btn.dataset.period;
+    renderReport();
+  });
+});
+
+function getFilteredSessions(period) {
+  const records = loadRecords();
+  const now = new Date();
+  let cutoff;
+
+  if (period === 'week') {
+    cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+  } else if (period === 'month') {
+    cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth() - 1);
+  } else {
+    cutoff = new Date(2000, 0, 1);
+  }
+
+  const all = [];
+  for (const [key, sessions] of Object.entries(records)) {
+    const d = new Date(key + 'T00:00:00');
+    if (d >= cutoff) {
+      for (const s of sessions) {
+        if (s.rating) all.push({ date: key, ...s });
+      }
+    }
+  }
+  all.sort((a, b) => a.date.localeCompare(b.date));
+  return all;
+}
+
+function renderReport() {
+  const data = getFilteredSessions(currentPeriod);
+  const container = document.getElementById('report-content');
+
+  if (data.length === 0) {
+    container.innerHTML = `
+      <div class="no-data">
+        <div class="no-data-icon">📊</div>
+        <p>まだデータがありません</p>
+        <p>毎日の記録を続けるとレポートが表示されます</p>
+      </div>
+    `;
+    return;
+  }
+
+  const nightData = data.filter(d => d.type === 'night');
+  const napData = data.filter(d => d.type === 'nap');
+
+  const avgRating = (data.reduce((s, d) => s + d.rating, 0) / data.length).toFixed(1);
+  const avgSleep = data.reduce((s, d) => s + d.duration, 0) / data.length;
+  const bestRating = Math.min(...data.map(d => d.rating));
+  const totalSessions = data.length;
+
+  container.innerHTML = `
+    <div class="report-card">
+      <h3>概要</h3>
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-value" id="stat-avg-rating">${avgRating}</span>
+          <span class="stat-label">平均気分</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">${formatDurationShort(avgSleep)}</span>
+          <span class="stat-label">平均睡眠</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">${bestRating}</span>
+          <span class="stat-label">最高評価</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">${totalSessions}回</span>
+          <span class="stat-label">計測回数</span>
+        </div>
+      </div>
+      ${nightData.length > 0 && napData.length > 0 ? `
+        <div class="type-breakdown">
+          <span>🌙 夜: ${nightData.length}回（平均 ${formatDurationShort(nightData.reduce((s,d) => s+d.duration, 0) / nightData.length)}）</span>
+          <span>💤 仮眠: ${napData.length}回（平均 ${formatDurationShort(napData.reduce((s,d) => s+d.duration, 0) / napData.length)}）</span>
+        </div>
+      ` : ''}
+    </div>
+    <div class="report-card">
+      <h3>気分の推移</h3>
+      <canvas id="chart-rating" height="200"></canvas>
+    </div>
+    <div class="report-card">
+      <h3>睡眠時間の推移</h3>
+      <canvas id="chart-sleep" height="200"></canvas>
+    </div>
+    <div class="report-card">
+      <h3>曜日別の傾向</h3>
+      <div id="weekday-stats" class="weekday-stats"></div>
+    </div>
+    <div class="report-card">
+      <h3>睡眠時間と気分の関係</h3>
+      <div id="correlation-info" class="correlation-info"></div>
+    </div>
+  `;
+
+  drawLineChart('chart-rating', data, d => d.rating, {
+    min: 1, max: 10, invert: true, color: '#6c63ff'
+  });
+  drawLineChart('chart-sleep', data, d => d.duration / 3600000, {
+    min: 0, max: 12, invert: false, color: '#4ecdc4'
+  });
+  renderWeekdayStats(data);
+  renderCorrelation(data);
+}
+
+function drawLineChart(canvasId, data, valueFn, opts) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width;
+  const h = rect.height;
+
+  const pad = { top: 20, right: 16, bottom: 30, left: 40 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  if (data.length < 2) {
+    ctx.fillStyle = '#8888aa';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('2回以上のデータが必要です', w / 2, h / 2);
+    return;
+  }
+
+  const values = data.map(valueFn);
+  const range = opts.max - opts.min;
+
+  ctx.strokeStyle = '#2a2a4a';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (plotH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+    ctx.fillStyle = '#8888aa';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    let labelVal = opts.invert ? opts.min + (range / 4) * i : opts.max - (range / 4) * i;
+    ctx.fillText(labelVal.toFixed(labelVal % 1 === 0 ? 0 : 1), pad.left - 8, y + 4);
+  }
+
+  ctx.fillStyle = '#8888aa';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  const labelStep = Math.max(1, Math.floor(data.length / 6));
+  for (let i = 0; i < data.length; i += labelStep) {
+    const x = pad.left + (plotW / (data.length - 1)) * i;
+    const parts = data[i].date.split('-');
+    ctx.fillText(`${parseInt(parts[1])}/${parseInt(parts[2])}`, x, h - 6);
+  }
+
+  const points = values.map((v, i) => {
+    const x = pad.left + (plotW / (data.length - 1)) * i;
+    let norm = opts.invert ? (v - opts.min) / range : 1 - (v - opts.min) / range;
+    const y = pad.top + norm * plotH;
+    return { x, y, type: data[i].type };
+  });
+
+  // Area
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, pad.top + plotH);
+  points.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(points[points.length - 1].x, pad.top + plotH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+  grad.addColorStop(0, opts.color + '40');
+  grad.addColorStop(1, opts.color + '05');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.strokeStyle = opts.color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Points — different shape for nap vs night
+  points.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = p.type === 'nap' ? '#ff9f43' : opts.color;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f0f1a';
+    ctx.fill();
+  });
+}
+
+function renderWeekdayStats(data) {
+  const container = document.getElementById('weekday-stats');
+  if (!container) return;
+  const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+  const buckets = Array.from({ length: 7 }, () => ({ ratings: [], sleeps: [] }));
+
+  data.forEach(rec => {
+    const dow = new Date(rec.date + 'T00:00:00').getDay();
+    buckets[dow].ratings.push(rec.rating);
+    buckets[dow].sleeps.push(rec.duration / 3600000);
+  });
+
+  container.innerHTML = '';
+  buckets.forEach((b, i) => {
+    const avg = b.ratings.length > 0
+      ? (b.ratings.reduce((s, v) => s + v, 0) / b.ratings.length).toFixed(1)
+      : '--';
+    const avgNum = parseFloat(avg) || 5;
+    const pct = Math.max(10, ((10 - avgNum) / 9) * 100);
+    const color = ratingColor(avgNum);
+
+    const item = document.createElement('div');
+    item.className = 'weekday-item';
+    item.innerHTML = `
+      <span class="day-avg" style="color:${color}">${avg}</span>
+      <div class="day-bar">
+        <div class="day-fill" style="height:${pct}%;background:${color}"></div>
+      </div>
+      <span class="day-name">${dayNames[i]}</span>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function renderCorrelation(data) {
+  const container = document.getElementById('correlation-info');
+  if (!container) return;
+
+  if (data.length < 3) {
+    container.innerHTML = '<p class="no-data">3回以上のデータが必要です</p>';
+    return;
+  }
+
+  const sleeps = data.map(d => d.duration / 3600000);
+  const ratings = data.map(d => d.rating);
+  const n = data.length;
+  const meanS = sleeps.reduce((a, b) => a + b, 0) / n;
+  const meanR = ratings.reduce((a, b) => a + b, 0) / n;
+  let num = 0, denS = 0, denR = 0;
+  for (let i = 0; i < n; i++) {
+    const ds = sleeps[i] - meanS;
+    const dr = ratings[i] - meanR;
+    num += ds * dr;
+    denS += ds * ds;
+    denR += dr * dr;
+  }
+  const r = denS && denR ? num / Math.sqrt(denS * denR) : 0;
+
+  const good = data.filter(d => d.rating <= 3);
+  const avgGoodSleep = good.length > 0
+    ? (good.reduce((s, d) => s + d.duration / 3600000, 0) / good.length).toFixed(1)
+    : null;
+
+  let insights = '';
+  if (Math.abs(r) < 0.2) {
+    insights += `<div class="insight">睡眠時間と気分の間に明確な関連は見られません（相関: ${r.toFixed(2)}）</div>`;
+  } else if (r < 0) {
+    insights += `<div class="insight">睡眠時間が長いほど気分が良い傾向があります（相関: ${r.toFixed(2)}）</div>`;
+  } else {
+    insights += `<div class="insight">睡眠時間が短い方が気分が良い傾向があります（相関: ${r.toFixed(2)}）</div>`;
+  }
+
+  if (avgGoodSleep) {
+    insights += `<div class="insight">気分が良い日（1〜3）の平均睡眠時間: <strong>${avgGoodSleep}時間</strong></div>`;
+  }
+
+  const avgBedHour = data.reduce((s, d) => {
+    const h = new Date(d.bedtime).getHours();
+    return s + (h < 12 ? h + 24 : h);
+  }, 0) / n;
+  insights += `<div class="insight">平均就寝時刻: <strong>${Math.floor(avgBedHour % 24)}:${String(Math.round((avgBedHour % 1) * 60)).padStart(2, '0')}</strong></div>`;
+
+  container.innerHTML = insights;
+}
+
+// ---- Service Worker ----
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ---- Init ----
+
+initCalendar();
+updateHomeView();

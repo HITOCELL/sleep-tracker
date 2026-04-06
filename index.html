@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Sleep Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Home View -->
+    <div id="view-home" class="view active">
+      <div class="home-header">
+        <h1>Sleep Tracker</h1>
+        <p class="date-display" id="today-date"></p>
+      </div>
+
+      <!-- Sleep Button (before bed) -->
+      <div id="sleep-section" class="home-section">
+        <div id="sleep-status" class="sleep-status">
+          <div id="btn-sleep" class="big-button sleep-btn">
+            <span class="btn-icon">🌙</span>
+            <span class="btn-label">おやすみ</span>
+          </div>
+          <p class="hint">タップして就寝を記録</p>
+        </div>
+
+        <div id="sleeping-status" class="sleep-status hidden">
+          <div class="sleeping-info">
+            <span class="sleeping-icon">😴</span>
+            <p>就寝中...</p>
+            <p class="bedtime-display" id="bedtime-display"></p>
+          </div>
+          <div id="btn-wake-from-sleep" class="big-button wake-btn">
+            <span class="btn-icon">☀️</span>
+            <span class="btn-label">起きました</span>
+          </div>
+          <button id="btn-cancel-sleep" class="cancel-btn">取り消す</button>
+        </div>
+      </div>
+
+      <!-- Wake Button (morning, after reopening app) -->
+      <div id="wake-button-section" class="home-section hidden">
+        <div class="wake-info-box">
+          <p class="wake-info">就寝: <span id="wake-bedtime"></span></p>
+          <p class="wake-info">経過時間: <span id="wake-duration"></span></p>
+        </div>
+        <div id="btn-wake" class="big-button wake-btn">
+          <span class="btn-icon">☀️</span>
+          <span class="btn-label">起きました</span>
+        </div>
+        <button id="btn-cancel-sleep2" class="cancel-btn">就寝を取り消す</button>
+      </div>
+
+      <!-- Rating (step 2) -->
+      <div id="rating-section" class="home-section hidden">
+        <h2 id="rating-greeting">おはよう！</h2>
+        <p class="wake-info">睡眠時間: <span id="rating-duration"></span></p>
+        <p class="sleep-type-label" id="sleep-type-label"></p>
+        <p class="rating-prompt">今の気分は？</p>
+        <p class="rating-scale-hint">1（最高） ← → 10（最悪）</p>
+        <div class="rating-grid" id="rating-grid"></div>
+      </div>
+
+      <!-- YouTube Banner -->
+      <div class="home-section">
+        <a href="https://youtu.be/YreUvFD9UgU?si=PjVvr653kw8p-lhy" target="_blank" rel="noopener" class="yt-banner">
+          <span class="yt-icon">▶</span>
+          <div class="yt-text">
+            <span class="yt-title">睡眠完全版</span>
+            <span class="yt-sub">睡眠改善したい方はこちら</span>
+          </div>
+          <span class="yt-arrow">→</span>
+        </a>
+      </div>
+
+      <!-- Today's Sessions -->
+      <div id="today-sessions" class="home-section hidden">
+        <h2 class="section-title">本日の記録</h2>
+        <div id="today-sessions-list"></div>
+      </div>
+    </div>
+
+    <!-- History (計測) View -->
+    <div id="view-history" class="view">
+      <div class="history-header">
+        <h2>計測履歴</h2>
+      </div>
+      <div id="history-list" class="history-list"></div>
+    </div>
+
+    <!-- Calendar View -->
+    <div id="view-calendar" class="view">
+      <div class="cal-header">
+        <button id="cal-prev" class="cal-nav">&lt;</button>
+        <h2 id="cal-month-title"></h2>
+        <button id="cal-next" class="cal-nav">&gt;</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="cal-detail" class="cal-detail hidden"></div>
+    </div>
+
+    <!-- Report View -->
+    <div id="view-report" class="view">
+      <div class="report-header">
+        <h2>分析レポート</h2>
+        <div class="report-tabs">
+          <button class="tab-btn active" data-period="week">1週間</button>
+          <button class="tab-btn" data-period="month">1ヶ月</button>
+          <button class="tab-btn" data-period="all">全期間</button>
+        </div>
+      </div>
+      <div class="report-content" id="report-content"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-view="home">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">ホーム</span>
+      </button>
+      <button class="nav-btn" data-view="history">
+        <span class="nav-icon">⏱</span>
+        <span class="nav-label">計測</span>
+      </button>
+      <button class="nav-btn" data-view="calendar">
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">カレンダー</span>
+      </button>
+      <button class="nav-btn" data-view="report">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">レポート</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

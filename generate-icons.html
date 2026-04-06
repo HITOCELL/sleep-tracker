@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Icons</title></head>
+<body>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvas) {
+  const ctx = canvas.getContext('2d');
+  const s = canvas.width;
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, s, s);
+  grad.addColorStop(0, '#1a1a2e');
+  grad.addColorStop(1, '#2d1b69');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, s, s, s * 0.2);
+  ctx.fill();
+  // Moon
+  ctx.font = `${s * 0.5}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🌙', s * 0.5, s * 0.45);
+  // Zzz
+  ctx.font = `bold ${s * 0.12}px sans-serif`;
+  ctx.fillStyle = '#6c63ff';
+  ctx.fillText('Z z z', s * 0.5, s * 0.8);
+}
+drawIcon(document.getElementById('c192'));
+drawIcon(document.getElementById('c512'));
+
+// Download links
+['c192','c512'].forEach(id => {
+  const canvas = document.getElementById(id);
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = `icon-${canvas.width}.png`;
+  a.textContent = `Download ${canvas.width}`;
+  document.body.appendChild(a);
+  document.body.appendChild(document.createElement('br'));
+});
+</script>
+</body>
+</html>
