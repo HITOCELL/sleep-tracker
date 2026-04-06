@@ -1,5 +1,5 @@
 // ============================================================
-// Sleep Tracker PWA — Main Application
+// 神睡眠トラッカー PWA — Main Application
 // ============================================================
 
 const DB_KEY = 'sleep_tracker_data';

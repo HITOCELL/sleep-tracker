@@ -1,6 +1,6 @@
 {
-  "name": "Sleep Tracker",
-  "short_name": "Sleep",
+  "name": "神睡眠トラッカー",
+  "short_name": "神睡眠",
   "description": "毎日の睡眠と寝起きの気分を記録・分析",
   "start_url": "./index.html",
   "display": "standalone",
