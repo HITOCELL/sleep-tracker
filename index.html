@@ -18,6 +18,7 @@
       <div class="home-header">
         <h1>神睡眠トラッカー</h1>
         <p class="date-display" id="today-date"></p>
+        <button id="btn-settings" class="settings-btn" aria-label="設定">⚙️</button>
       </div>
 
       <!-- Sleep Button (before bed) -->
@@ -145,6 +146,47 @@
         <span class="nav-label">レポート</span>
       </button>
     </nav>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>設定</h2>
+        <button id="settings-close" class="modal-close">✕</button>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-heading">🌙 就寝リマインダー</h3>
+        <p class="settings-desc">設定した時刻になると「そろそろ眠る時間ですよ」と通知が届きます</p>
+
+        <div class="settings-row">
+          <div class="settings-row-label">
+            <span class="settings-row-title">リマインダー</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="reminder-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row" id="reminder-time-row">
+          <div class="settings-row-label">
+            <span class="settings-row-title">就寝希望時刻</span>
+          </div>
+          <input type="time" id="reminder-time" class="time-input" value="23:00">
+        </div>
+
+        <div id="notification-permission-banner" class="notif-banner hidden">
+          <p>通知を受け取るには許可が必要です</p>
+          <button id="btn-request-notif" class="btn-request-notif">通知を許可する</button>
+        </div>
+
+        <div id="notification-denied-banner" class="notif-banner notif-denied hidden">
+          <p>通知がブロックされています。<br>ブラウザの設定から通知を許可してください。</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

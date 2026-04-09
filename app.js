@@ -752,7 +752,127 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
+// ---- Bedtime Reminder ----
+
+const SETTINGS_KEY = 'sleep_tracker_settings';
+
+function loadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
+
+let lastNotifiedMinute = null;
+let reminderInterval = null;
+
+function checkReminder() {
+  const s = loadSettings();
+  if (!s.reminderEnabled || !s.reminderTime) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  if (hhmm === s.reminderTime && hhmm !== lastNotifiedMinute) {
+    lastNotifiedMinute = hhmm;
+    showBedtimeNotification();
+  }
+}
+
+async function showBedtimeNotification() {
+  const opts = {
+    body: 'そろそろ眠る時間ですよ 🌙',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: 'bedtime-reminder',
+    requireInteraction: false,
+  };
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification('神睡眠トラッカー', opts);
+      return;
+    } catch {}
+  }
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('神睡眠トラッカー', opts);
+  }
+}
+
+function startReminderCheck() {
+  if (reminderInterval) clearInterval(reminderInterval);
+  reminderInterval = setInterval(checkReminder, 30000);
+}
+
+// ---- Settings Modal ----
+
+function updateNotifPermissionBanner() {
+  const banner = document.getElementById('notification-permission-banner');
+  const denied = document.getElementById('notification-denied-banner');
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    banner.classList.add('hidden');
+    denied.classList.add('hidden');
+  } else if (Notification.permission === 'denied') {
+    banner.classList.add('hidden');
+    denied.classList.remove('hidden');
+  } else {
+    banner.classList.remove('hidden');
+    denied.classList.add('hidden');
+  }
+}
+
+function openSettings() {
+  const s = loadSettings();
+  const toggle = document.getElementById('reminder-toggle');
+  const timeInput = document.getElementById('reminder-time');
+  toggle.checked = !!s.reminderEnabled;
+  timeInput.value = s.reminderTime || '23:00';
+  updateNotifPermissionBanner();
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.add('hidden');
+}
+
+document.getElementById('btn-settings').addEventListener('click', openSettings);
+document.getElementById('settings-close').addEventListener('click', closeSettings);
+document.getElementById('settings-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeSettings();
+});
+
+document.getElementById('reminder-toggle').addEventListener('change', e => {
+  const s = loadSettings();
+  s.reminderEnabled = e.target.checked;
+  saveSettings(s);
+  if (s.reminderEnabled && 'Notification' in window && Notification.permission === 'default') {
+    updateNotifPermissionBanner();
+  }
+});
+
+document.getElementById('reminder-time').addEventListener('change', e => {
+  const s = loadSettings();
+  s.reminderTime = e.target.value;
+  saveSettings(s);
+});
+
+document.getElementById('btn-request-notif').addEventListener('click', async () => {
+  const result = await Notification.requestPermission();
+  updateNotifPermissionBanner();
+  if (result === 'granted') {
+    const s = loadSettings();
+    s.reminderEnabled = true;
+    saveSettings(s);
+    document.getElementById('reminder-toggle').checked = true;
+  }
+});
+
 // ---- Init ----
 
+startReminderCheck();
 initCalendar();
 updateHomeView();
