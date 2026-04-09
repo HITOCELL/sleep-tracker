@@ -1,0 +1,19 @@
+name = "sleep-tracker-push"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+# 毎分チェック（指定時刻に通知を送信）
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "SUBSCRIPTIONS"
+id = "ecbc26af615b405a818f7d2704a9a127"
+
+[vars]
+VAPID_PUBLIC_KEY = "BF6ZnvMefM6NwoG_z0WLrYI1xXrPGsEyVNDJwnk8vDfKjoEo81bcnLYQ4jUl_0026Q6sZzrYLK8nfVlkB2xlMWg"
+
+# Secrets（wrangler secret put で設定）:
+#   VAPID_PRIVATE_KEY  - npm run generate-keys で取得
+#   VAPID_EMAIL        - "mailto:your@email.com" 形式

@@ -754,6 +754,10 @@ if ('serviceWorker' in navigator) {
 
 // ---- Bedtime Reminder ----
 
+// Cloudflare Worker のデプロイ後に設定する
+const PUSH_SERVER_URL = 'https://sleep-tracker-push.ichikawa888.workers.dev';
+const VAPID_PUBLIC_KEY = 'BF6ZnvMefM6NwoG_z0WLrYI1xXrPGsEyVNDJwnk8vDfKjoEo81bcnLYQ4jUl_0026Q6sZzrYLK8nfVlkB2xlMWg';
+
 const SETTINGS_KEY = 'sleep_tracker_settings';
 
 function loadSettings() {
@@ -762,8 +766,123 @@ function loadSettings() {
   } catch { return {}; }
 }
 
+// IndexedDB: Service Worker と設定を共有するため
+function openSettingsDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('sleep-tracker-db', 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore('settings');
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+async function saveSettingsToDB(s) {
+  try {
+    const db = await openSettingsDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('settings', 'readwrite');
+      tx.objectStore('settings').put(s, 'main');
+      tx.oncomplete = resolve;
+      tx.onerror = e => reject(e.target.error);
+    });
+  } catch (e) {
+    console.warn('IndexedDB保存失敗:', e);
+  }
+}
+
 function saveSettings(s) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  saveSettingsToDB(s);
+}
+
+async function registerPeriodicSync() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if ('periodicSync' in reg) {
+      await reg.periodicSync.register('bedtime-reminder', { minInterval: 60 * 1000 });
+      console.log('Periodic Background Sync 登録済み');
+    }
+  } catch (e) {
+    console.log('Periodic Sync 未対応:', e);
+  }
+}
+
+// ---- Web Push（サーバー経由・iOS対応）----
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (VAPID_PUBLIC_KEY.startsWith('YOUR_')) return; // 未設定
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    const s = loadSettings();
+    await fetch(`${PUSH_SERVER_URL}/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: sub.toJSON(),
+        reminderTime: s.reminderTime || '23:00',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    });
+    console.log('Push 購読登録済み');
+  } catch (e) {
+    console.warn('Push 購読失敗:', e);
+  }
+}
+
+async function unsubscribeFromPush() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    await fetch(`${PUSH_SERVER_URL}/subscribe`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: sub.endpoint }),
+    });
+    await sub.unsubscribe();
+    console.log('Push 購読解除済み');
+  } catch (e) {
+    console.warn('Push 購読解除失敗:', e);
+  }
+}
+
+async function updatePushReminderTime(reminderTime) {
+  if (!('serviceWorker' in navigator) || VAPID_PUBLIC_KEY.startsWith('YOUR_')) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    await fetch(`${PUSH_SERVER_URL}/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: sub.toJSON(),
+        reminderTime,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    });
+  } catch (e) {
+    console.warn('Push 時刻更新失敗:', e);
+  }
 }
 
 let lastNotifiedMinute = null;
@@ -845,19 +964,28 @@ document.getElementById('settings-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeSettings();
 });
 
-document.getElementById('reminder-toggle').addEventListener('change', e => {
+document.getElementById('reminder-toggle').addEventListener('change', async e => {
   const s = loadSettings();
   s.reminderEnabled = e.target.checked;
   saveSettings(s);
-  if (s.reminderEnabled && 'Notification' in window && Notification.permission === 'default') {
-    updateNotifPermissionBanner();
+  if (s.reminderEnabled) {
+    if ('Notification' in window && Notification.permission === 'default') {
+      updateNotifPermissionBanner();
+    } else if (Notification.permission === 'granted') {
+      await subscribeToPush();
+    }
+  } else {
+    await unsubscribeFromPush();
   }
 });
 
-document.getElementById('reminder-time').addEventListener('change', e => {
+document.getElementById('reminder-time').addEventListener('change', async e => {
   const s = loadSettings();
   s.reminderTime = e.target.value;
   saveSettings(s);
+  if (s.reminderEnabled && Notification.permission === 'granted') {
+    await updatePushReminderTime(e.target.value);
+  }
 });
 
 document.getElementById('btn-request-notif').addEventListener('click', async () => {
@@ -868,11 +996,20 @@ document.getElementById('btn-request-notif').addEventListener('click', async () 
     s.reminderEnabled = true;
     saveSettings(s);
     document.getElementById('reminder-toggle').checked = true;
+    registerPeriodicSync();
+    await subscribeToPush();
   }
 });
 
 // ---- Init ----
 
 startReminderCheck();
+// 既存のlocalStorage設定をIndexedDBに同期（SW共有のため）
+saveSettingsToDB(loadSettings());
+if ('Notification' in window && Notification.permission === 'granted') {
+  registerPeriodicSync();
+  const initSettings = loadSettings();
+  if (initSettings.reminderEnabled) subscribeToPush();
+}
 initCalendar();
 updateHomeView();

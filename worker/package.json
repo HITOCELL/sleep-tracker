@@ -1,0 +1,16 @@
+{
+  "name": "sleep-tracker-push",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "generate-keys": "node -e \"const wp=require('web-push');const k=wp.generateVAPIDKeys();console.log('\\n=== VAPID Keys ===');console.log('Public Key:', k.publicKey);console.log('Private Key:', k.privateKey);\""
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "wrangler": "^3.100.0"
+  }
+}
