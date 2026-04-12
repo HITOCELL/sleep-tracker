@@ -762,9 +762,8 @@ if ('serviceWorker' in navigator) {
 // Cloudflare Worker のデプロイ後に設定する
 const PUSH_SERVER_URL = 'https://sleep-tracker-push.ichikawa888.workers.dev';
 
-// Google Sheets 連携（本部管理用 — ユーザーには非公開）
-// GAS デプロイ後にURLを設定する
-const GAS_URL = '';
+// 睡眠データ収集（本部管理用 — ユーザーには非公開）
+const GAS_URL = 'https://sleep-tracker-push.ichikawa888.workers.dev/sleep-record';
 const VAPID_PUBLIC_KEY = 'BF6ZnvMefM6NwoG_z0WLrYI1xXrPGsEyVNDJwnk8vDfKjoEo81bcnLYQ4jUl_0026Q6sZzrYLK8nfVlkB2xlMWg';
 
 const SETTINGS_KEY = 'sleep_tracker_settings';
