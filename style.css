@@ -39,6 +39,100 @@ body {
   height: 100%;
   z-index: 0;
   pointer-events: none;
+  transition: opacity 1.5s ease;
+}
+
+/* Dawn / Sunrise background */
+#dawn-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  background: linear-gradient(
+    180deg,
+    #1a2a5e 0%,
+    #3b5998 12%,
+    #b06090 28%,
+    #e8744a 44%,
+    #f4a843 58%,
+    #fbd577 72%,
+    #fff3c4 88%,
+    #ffffff 100%
+  );
+  overflow: hidden;
+}
+
+/* Sun glow */
+.dawn-sun {
+  position: absolute;
+  bottom: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #ffe680 35%, #ffb347 65%, transparent 100%);
+  box-shadow:
+    0 0 40px 20px rgba(255, 210, 80, 0.5),
+    0 0 100px 50px rgba(255, 160, 50, 0.25);
+  animation: sun-pulse 4s ease-in-out infinite;
+}
+
+/* Light rays */
+#dawn-bg::before {
+  content: '';
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  width: 250%;
+  height: 250%;
+  transform: translateX(-50%) translateY(40%);
+  background: repeating-conic-gradient(
+    rgba(255, 220, 120, 0.07) 0deg 8deg,
+    transparent 8deg 18deg
+  );
+  border-radius: 50%;
+  animation: rays-spin 30s linear infinite;
+}
+
+@keyframes sun-pulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.95; }
+  50% { transform: translateX(-50%) scale(1.08); opacity: 1; }
+}
+
+@keyframes rays-spin {
+  from { transform: translateX(-50%) translateY(40%) rotate(0deg); }
+  to   { transform: translateX(-50%) translateY(40%) rotate(360deg); }
+}
+
+/* Dawn mode — star canvas fades out */
+body.dawn #starfield { opacity: 0; }
+body.dawn #dawn-bg   { opacity: 1; }
+
+/* Rating section in dawn mode — glassmorphism panel */
+body.dawn #rating-section {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 24px;
+  padding: 28px 20px 24px;
+  margin: 0 -4px;
+}
+body.dawn #rating-section h2,
+body.dawn #rating-section p {
+  color: #2a1a0a;
+  -webkit-text-fill-color: #2a1a0a;
+}
+body.dawn .rating-btn {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.7);
+  color: #1a1a2e;
 }
 
 #app {

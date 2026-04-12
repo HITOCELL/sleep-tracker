@@ -224,6 +224,7 @@ function handleWakeUp() {
   document.getElementById('rating-duration').textContent = formatDuration(duration);
   document.getElementById('sleep-type-label').textContent = typeLabel(type);
   document.getElementById('rating-greeting').textContent = type === 'night' ? 'おはよう！' : 'お疲れさま！';
+  document.body.classList.add('dawn');
   buildRatingGrid();
 }
 
@@ -270,6 +271,7 @@ function saveRecord(rating) {
   saveRecords(records);
   setPendingSleep(null);
   wakeTimeISO = null;
+  document.body.classList.remove('dawn');
   updateHomeView();
 }
 
