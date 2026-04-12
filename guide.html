@@ -127,6 +127,18 @@
     .tip strong {
       color: #e8e8f0;
     }
+    .warn {
+      background: #2a1a1a;
+      border-left: 3px solid #ff6b6b;
+      border-radius: 0 10px 10px 0;
+      padding: 14px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: #cc8888;
+    }
+    .warn strong {
+      color: #ff9999;
+    }
     .install-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -194,20 +206,21 @@
 
     <!-- ===== アプリの概要 ===== -->
     <h2>このアプリについて</h2>
-    <p>神睡眠トラッカーは、毎日の睡眠を簡単に記録・分析できる無料アプリです。寝る前と起きた後にボタンをタップするだけで、睡眠時間と気分を自動で記録します。</p>
+    <p>神睡眠トラッカーは、毎日の睡眠を簡単に記録・分析できる無料アプリです。寝る前と起きた後にボタンをタップするだけで、睡眠時間と目覚めの気分を自動で記録します。</p>
 
     <!-- ===== ホーム画面に追加 ===== -->
     <h2>ホーム画面に追加する</h2>
-    <p>ブラウザからそのまま使えますが、ホーム画面に追加するとアプリのように使えます。</p>
+    <p>ブラウザからそのまま使えますが、ホーム画面に追加するとアプリのように使えます。<br><strong>通知機能を使うには必須です。</strong></p>
 
     <div class="install-grid">
       <div class="install-card">
         <div class="phone">📱</div>
         <div class="name">iPhone</div>
         <div class="steps">
-          1. Safariで開く<br>
-          2. 下の共有ボタン ↑ をタップ<br>
-          3.「ホーム画面に追加」を選択
+          1. <strong>Safari</strong>で開く<br>
+          2. 画面下の共有ボタン ↑ をタップ<br>
+          3.「ホーム画面に追加」を選択<br>
+          4. 追加後、ホーム画面のアイコンから起動
         </div>
       </div>
       <div class="install-card">
@@ -215,14 +228,29 @@
         <div class="name">Android</div>
         <div class="steps">
           1. Chromeで開く<br>
-          2. 右上のメニュー ⋮ をタップ<br>
-          3.「ホーム画面に追加」を選択
+          2. 右上メニュー ⋮ をタップ<br>
+          3.「ホーム画面に追加」を選択<br>
+          4. 追加後、ホーム画面から起動
         </div>
       </div>
     </div>
 
     <div class="tip">
-      <strong>ポイント：</strong>iPhoneの場合は必ずSafariで開いてください。Chrome等では「ホーム画面に追加」が使えません。
+      <strong>iPhoneの注意：</strong>必ずSafariで開いてください。Chrome等では「ホーム画面に追加」が使えません。また、追加後は<strong>ホーム画面のアイコンから起動</strong>してください（Safariから開くと通知が届きません）。
+    </div>
+
+    <!-- ===== はじめての起動 ===== -->
+    <h2>はじめての起動</h2>
+    <p>初回起動時に基本情報の入力画面が表示されます。</p>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">1</span>生年月日と性別を入力</div>
+      <div class="step-body">年・月・日をそれぞれ選択し、性別を選んで「はじめる」をタップ。この情報はデバイス内のみに保存され、名前や住所などの個人情報は一切収集しません。</div>
+    </div>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">2</span>ホーム画面が表示される</div>
+      <div class="step-body">設定完了です。以後はこの入力は不要です。</div>
     </div>
 
     <!-- ===== 基本の使い方 ===== -->
@@ -232,27 +260,27 @@
 
     <div class="step">
       <div class="step-header"><span class="step-num">1</span>寝る前に「おやすみ」をタップ</div>
-      <div class="step-body">🌙ボタンをタップすると就寝時刻が記録されます。そのままスマホを置いて寝てください。</div>
+      <div class="step-body">🌙 ボタンをタップすると就寝時刻が記録されます。そのままスマホを置いて寝てください。</div>
     </div>
 
     <div class="step">
       <div class="step-header"><span class="step-num">2</span>起きたら「起きました」をタップ</div>
-      <div class="step-body">☀️ボタンをタップすると起床時刻が記録され、睡眠時間が自動計算されます。</div>
+      <div class="step-body">☀️ ボタンをタップすると起床時刻が記録され、睡眠時間が自動計算されます。背景が朝日に変わります。</div>
     </div>
 
     <div class="step">
-      <div class="step-header"><span class="step-num">3</span>気分を1〜10でタップ</div>
-      <div class="step-body">数字をタップするだけで記録完了。ボタンひとつで終わります。</div>
+      <div class="step-header"><span class="step-num">3</span>目覚めの気分を1〜10でタップ</div>
+      <div class="step-body">1が最悪、10が最高です。数字をタップするだけで記録完了。</div>
     </div>
 
-    <h3>気分の評価基準</h3>
+    <h3>目覚めの評価基準</h3>
     <div class="rating-example">
-      <span class="rating-ex-item" style="background:#4ecdc4;color:#0f0f1a">1〜3 最高</span>
-      <span class="rating-ex-item" style="background:#ffe66d;color:#0f0f1a">4〜6 普通</span>
-      <span class="rating-ex-item" style="background:#ff9f43;color:#0f0f1a">7〜8 やや悪い</span>
-      <span class="rating-ex-item" style="background:#ff6b6b;color:white">9〜10 最悪</span>
+      <span class="rating-ex-item" style="background:#ff6b6b;color:white">😫 1〜2 最悪</span>
+      <span class="rating-ex-item" style="background:#ff9f43;color:#0f0f1a">😟 3〜4 悪い</span>
+      <span class="rating-ex-item" style="background:#ffe66d;color:#0f0f1a">😐 5〜7 普通</span>
+      <span class="rating-ex-item" style="background:#4ecdc4;color:#0f0f1a">🌙 8〜10 最高</span>
     </div>
-    <p style="font-size:14px;color:#8888aa;">数字が小さいほど気分が良い、という評価です。</p>
+    <p style="font-size:14px;color:#8888aa;margin-top:4px;">数字が大きいほど気分が良い評価です。1が「目覚め最悪」、10が「最高の目覚め」です。</p>
 
     <h3>仮眠も記録できます</h3>
     <p style="font-size:14px;color:#8888aa;">1日に何回でも記録できます。昼寝や短い仮眠も同じ手順でOK。アプリが自動で「夜の睡眠」と「仮眠」を判別します。</p>
@@ -262,26 +290,68 @@
     </div>
 
     <!-- ===== 就寝リマインダー ===== -->
-    <h2>就寝リマインダー</h2>
-    <p>設定した時刻になると「そろそろ眠る時間ですよ」と通知が届きます。おやすみボタンの押し忘れを防げます。</p>
+    <h2>就寝リマインダー（プッシュ通知）</h2>
+    <p>設定した時刻になると「そろそろ眠る時間ですよ 🌙」と通知が届きます。アプリを閉じていても受け取れます。</p>
+
+    <div class="warn">
+      <strong>iPhoneをお使いの方へ：</strong>通知を受け取るには、<strong>ホーム画面に追加したアプリ（PWA）</strong>から起動している必要があります。SafariやChromeのブラウザから開いている場合は通知が届きません。
+    </div>
+
+    <h3>設定手順</h3>
 
     <div class="step">
       <div class="step-header"><span class="step-num">1</span>⚙️ 設定を開く</div>
-      <div class="step-body">ホーム画面の右上にある ⚙️ をタップして設定を開きます。</div>
+      <div class="step-body">ホーム画面の右上にある ⚙️ をタップ。</div>
     </div>
 
     <div class="step">
       <div class="step-header"><span class="step-num">2</span>リマインダーをONにする</div>
-      <div class="step-body">「リマインダー」のトグルをONにして、「通知を許可する」をタップします。ブラウザの確認ダイアログが出たら「許可」を選んでください。</div>
+      <div class="step-body">「リマインダー」のトグルをONにすると「通知を許可する」ボタンが表示されます。タップして許可してください。</div>
     </div>
 
     <div class="step">
       <div class="step-header"><span class="step-num">3</span>就寝希望時刻を設定する</div>
-      <div class="step-body">時刻をタップして、自分が寝たい時間を設定します。その時刻になると通知が届きます。</div>
+      <div class="step-body">時刻を入力します。設定した時刻になると通知が届きます。</div>
+    </div>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">4</span>「通知登録状態：登録済み ✓」を確認</div>
+      <div class="step-body">設定画面内に「登録済み ✓」と表示されれば設定完了です。</div>
+    </div>
+
+    <h3>通知が届かない場合</h3>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">1</span>「テスト通知を送る」をタップ</div>
+      <div class="step-body">設定画面に「テスト通知を送る」ボタンが表示されている場合は、タップして通知が届くか確認できます。届いた場合はサーバー連携も正常です。</div>
+    </div>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">2</span>「通知を再登録する」をタップ</div>
+      <div class="step-body">「未登録」と表示されている場合や、テスト通知が届かない場合は「通知を再登録する」をタップしてください。</div>
     </div>
 
     <div class="tip">
-      <strong>より確実に通知を受け取るには：</strong>ホーム画面に追加（PWAとしてインストール）すると、アプリがバックグラウンドで動き続けるため、通知が届きやすくなります。ブラウザを完全に閉じた状態では通知は届きません。
+      <strong>うまくいかない場合：</strong>いったん設定を閉じて「アップデートを確認して再読み込み」を行い、再度通知を設定し直してみてください。
+    </div>
+
+    <!-- ===== データのバックアップ ===== -->
+    <h2>データのバックアップ</h2>
+    <p>アプリを削除・再インストールすると記録が消える場合があります。定期的にバックアップをとることをおすすめします。</p>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">1</span>⚙️ 設定を開く</div>
+      <div class="step-body">ホーム画面右上の ⚙️ をタップ。</div>
+    </div>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">2</span>「データをエクスポート」をタップ</div>
+      <div class="step-body">JSONファイルがダウンロードされます。iCloudやGoogleドライブに保存しておくと安心です。</div>
+    </div>
+
+    <div class="step">
+      <div class="step-header"><span class="step-num">3</span>復元するときは「インポート」</div>
+      <div class="step-body">再インストール後に設定画面からJSONファイルを選択するとデータを復元できます。</div>
     </div>
 
     <!-- ===== 4つの画面 ===== -->
@@ -302,21 +372,21 @@
     <div class="feature-card">
       <div class="icon">📅</div>
       <div class="title">カレンダー</div>
-      <div class="desc">月別カレンダーで記録を確認。日付をタップすると詳細が見られます。色で気分の良し悪しがわかります。</div>
+      <div class="desc">月別カレンダーで記録を確認。日付をタップすると詳細が見られます。色で目覚めの良し悪しがわかります。</div>
     </div>
 
     <div class="feature-card">
       <div class="icon">📊</div>
       <div class="title">レポート</div>
-      <div class="desc">1週間・1ヶ月・全期間で分析。気分と睡眠時間の推移グラフ、曜日別の傾向、睡眠と気分の相関がわかります。</div>
+      <div class="desc">1週間・1ヶ月・全期間で分析。目覚めと睡眠時間の推移グラフ、曜日別の傾向、睡眠と気分の相関がわかります。</div>
     </div>
 
     <!-- ===== レポートの見方 ===== -->
     <h2>レポートの見方</h2>
 
     <div class="step">
-      <div class="step-header"><span class="step-num">📈</span>気分の推移</div>
-      <div class="step-body">グラフが下にあるほど気分が良い状態（1に近い）。上に行くほど悪い状態です。</div>
+      <div class="step-header"><span class="step-num">📈</span>目覚めの推移</div>
+      <div class="step-body">グラフが上にあるほど気分が良い状態（10に近い）。下に行くほど悪い状態です。</div>
     </div>
 
     <div class="step">
@@ -326,12 +396,12 @@
 
     <div class="step">
       <div class="step-header"><span class="step-num">📆</span>曜日別の傾向</div>
-      <div class="step-body">どの曜日に気分が良いか、バーの高さで比較できます。生活リズムの参考に。</div>
+      <div class="step-body">どの曜日に目覚めが良いか、バーの高さで比較できます。生活リズムの参考に。</div>
     </div>
 
     <div class="step">
       <div class="step-header"><span class="step-num">🔗</span>睡眠と気分の関係</div>
-      <div class="step-body">睡眠時間と気分の相関を自動分析。あなたに最適な睡眠時間のヒントが見つかります。</div>
+      <div class="step-body">睡眠時間と目覚めの相関を自動分析。あなたに最適な睡眠時間のヒントが見つかります。</div>
     </div>
 
     <!-- ===== よくある質問 ===== -->
@@ -339,27 +409,37 @@
 
     <div class="faq">
       <div class="q">Q. データはどこに保存されますか？</div>
-      <div class="a">お使いのスマホ内（ブラウザのローカルストレージ）に保存されます。サーバーにデータは送信されません。プライバシーは完全に保護されます。</div>
+      <div class="a">記録はお使いのスマホ内（ブラウザのローカルストレージ）に保存されます。名前・住所などの個人情報は収集していません。</div>
     </div>
 
     <div class="faq">
       <div class="q">Q. 通信がなくても使えますか？</div>
-      <div class="a">はい。一度アクセスすればオフラインでも動作します。</div>
+      <div class="a">はい。一度アクセスすればオフラインでも記録・閲覧が動作します（通知はオンライン時のみ）。</div>
+    </div>
+
+    <div class="faq">
+      <div class="q">Q. iPhoneで通知が届きません</div>
+      <div class="a">① ホーム画面に追加したアプリから起動しているか確認。② 設定画面の「通知登録状態」が「登録済み ✓」になっているか確認。③「テスト通知を送る」をタップして届くか試してください。届かない場合は「通知を再登録する」を試してみてください。</div>
     </div>
 
     <div class="faq">
       <div class="q">Q. おやすみボタンを押し忘れがちです</div>
-      <div class="a">就寝リマインダー機能をお使いください。⚙️ 設定から就寝希望時刻を設定すると、その時刻に「そろそろ眠る時間ですよ」と通知が届きます。</div>
+      <div class="a">就寝リマインダー機能をお使いください。⚙️ 設定から就寝希望時刻を設定すると、その時刻に通知が届きます。</div>
     </div>
 
     <div class="faq">
-      <div class="q">Q. ブラウザのデータを消すとどうなりますか？</div>
-      <div class="a">ブラウザのキャッシュ・履歴を削除すると記録も消えてしまいます。ご注意ください。</div>
+      <div class="q">Q. アプリを削除したらデータは消えますか？</div>
+      <div class="a">消えます。削除前に設定からデータをエクスポート（JSON）してバックアップしてください。再インストール後にインポートで復元できます。</div>
     </div>
 
     <div class="faq">
       <div class="q">Q. 1日に何回まで記録できますか？</div>
       <div class="a">制限はありません。夜の睡眠、昼の仮眠など、何回でも記録できます。</div>
+    </div>
+
+    <div class="faq">
+      <div class="q">Q. 評価の1〜10はどう使えばいいですか？</div>
+      <div class="a">1が「目覚め最悪」、10が「最高の目覚め」です。今日の目覚め具合を直感でタップするだけでOK。続けることで自分の睡眠パターンが見えてきます。</div>
     </div>
 
     <!-- ===== フッター ===== -->
