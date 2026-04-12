@@ -200,6 +200,17 @@
       </div>
 
       <div class="settings-section">
+        <h3 class="settings-heading">💾 データのバックアップ</h3>
+        <p class="settings-desc">ホーム画面から削除するとデータが消えます。定期的にバックアップしてください。</p>
+        <button id="btn-export" class="export-btn">データをエクスポート（JSONダウンロード）</button>
+        <div class="import-area">
+          <label class="import-label" for="input-import">データをインポート（JSONファイル）</label>
+          <input type="file" id="input-import" accept=".json" class="import-input">
+        </div>
+        <div id="import-result" class="import-result hidden"></div>
+      </div>
+
+      <div class="settings-section">
         <h3 class="settings-heading">🔄 アプリ更新</h3>
         <p class="settings-desc">最新版が反映されない場合はこちらからキャッシュをクリアできます</p>
         <p class="app-version-label">現在のバージョン: v1.6</p>

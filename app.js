@@ -1039,6 +1039,46 @@ document.getElementById('reminder-time').addEventListener('change', async e => {
   }
 });
 
+// ---- Data Export / Import ----
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const records = loadRecords();
+  const json = JSON.stringify({ version: 1, exported: new Date().toISOString(), records }, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sleep-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('input-import').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const resultEl = document.getElementById('import-result');
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data.records || typeof data.records !== 'object') throw new Error('形式が正しくありません');
+    const existing = loadRecords();
+    // Merge: imported data takes priority per date
+    const merged = { ...existing, ...data.records };
+    localStorage.setItem(DB_KEY, JSON.stringify(merged));
+    const count = Object.values(data.records).flat().length;
+    resultEl.textContent = `✓ ${count}件のデータをインポートしました`;
+    resultEl.className = 'import-result success';
+    resultEl.classList.remove('hidden');
+    e.target.value = '';
+    updateHomeView();
+  } catch (err) {
+    resultEl.textContent = `エラー: ${err.message}`;
+    resultEl.className = 'import-result error';
+    resultEl.classList.remove('hidden');
+    e.target.value = '';
+  }
+});
+
 document.getElementById('btn-resubscribe').addEventListener('click', async () => {
   const btn = document.getElementById('btn-resubscribe');
   btn.textContent = '登録中...';

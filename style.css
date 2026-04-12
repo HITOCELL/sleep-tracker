@@ -1062,6 +1062,49 @@ canvas {
   color: var(--text-dim);
   margin-bottom: 10px;
 }
+.export-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary-light);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 10px;
+}
+.export-btn:active { background: rgba(108,99,255,0.1); }
+
+.import-area {
+  margin-top: 4px;
+}
+.import-label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.import-input {
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.import-result {
+  margin-top: 8px;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.import-result.success {
+  background: rgba(78,205,196,0.15);
+  color: var(--success);
+}
+.import-result.error {
+  background: rgba(255,107,107,0.15);
+  color: #ff6b6b;
+}
+
 .push-status-badge {
   font-size: 13px;
   color: var(--text-dim);
