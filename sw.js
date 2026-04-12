@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sleep-tracker-v19';
+const CACHE_NAME = 'sleep-tracker-v20';
 const ASSETS = [
   './',
   './index.html',

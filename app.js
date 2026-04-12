@@ -1254,40 +1254,62 @@ function checkOnboarding() {
 
 // ---- Google Sheets Sync ----
 
+function buildPayload(record, profile, reminderTime) {
+  return {
+    userId:        profile.userId,
+    birthdate:     profile.birthdate,
+    gender:        profile.gender,
+    date:          dateKey(new Date(record.waketime)),
+    bedtime:       record.bedtime,
+    waketime:      record.waketime,
+    duration_min:  Math.round(record.duration / 60000),
+    sleep_type:    record.type,
+    rating:        record.rating,
+    reminder_time: reminderTime || '',
+  };
+}
+
+async function postToGAS(payload) {
+  await fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify(payload),
+  });
+}
+
 async function syncToSheets(record) {
   if (!GAS_URL) return;
   const profile = loadProfile();
   if (!profile) return;
-
   const s = loadSettings();
-  const payload = {
-    userId:          profile.userId,
-    birthdate:       profile.birthdate,
-    gender:          profile.gender,
-    date:            dateKey(new Date(record.waketime)),
-    bedtime:         record.bedtime,
-    waketime:        record.waketime,
-    duration_min:    Math.round(record.duration / 60000),
-    sleep_type:      record.type,
-    rating:          record.rating,
-    reminder_time:   s.reminderTime || '',
-  };
-
   try {
-    await fetch(GAS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-      body: JSON.stringify(payload),
-    });
-  } catch (e) {
-    // サイレントに失敗（ユーザーには通知しない）
+    await postToGAS(buildPayload(record, profile, s.reminderTime));
+  } catch {}
+}
+
+// 起動時に全既存データを一括送信（初回のみ）
+async function bulkSyncAllRecords() {
+  if (!GAS_URL) return;
+  const profile = loadProfile();
+  if (!profile) return;
+  if (localStorage.getItem('sleep_tracker_bulk_synced')) return;
+
+  const records = loadRecords();
+  const s = loadSettings();
+  const all = Object.values(records).flat();
+  if (all.length === 0) return;
+
+  for (const rec of all) {
+    try { await postToGAS(buildPayload(rec, profile, s.reminderTime)); } catch {}
   }
+  localStorage.setItem('sleep_tracker_bulk_synced', '1');
 }
 
 // ---- Init ----
 
 checkOnboarding();
+bulkSyncAllRecords();
 startReminderCheck();
 // 既存のlocalStorage設定をIndexedDBに同期（SW共有のため）
 saveSettingsToDB(loadSettings());
