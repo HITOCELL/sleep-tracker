@@ -763,7 +763,7 @@ if ('serviceWorker' in navigator) {
 const PUSH_SERVER_URL = 'https://sleep-tracker-push.ichikawa888.workers.dev';
 
 // 睡眠データ収集（本部管理用 — ユーザーには非公開）
-const GAS_URL = 'https://sleep-tracker-push.ichikawa888.workers.dev/sleep-record';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwS1sCWg3Tz3ERMafkyVcfiwPy-49J3zsoXRQz_7VQwHpDtO_UF82N--OG6Bejus5xAVQ/exec';
 const VAPID_PUBLIC_KEY = 'BF6ZnvMefM6NwoG_z0WLrYI1xXrPGsEyVNDJwnk8vDfKjoEo81bcnLYQ4jUl_0026Q6sZzrYLK8nfVlkB2xlMWg';
 
 const SETTINGS_KEY = 'sleep_tracker_settings';
