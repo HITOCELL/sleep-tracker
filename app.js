@@ -822,12 +822,22 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
-async function subscribeToPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  if (VAPID_PUBLIC_KEY.startsWith('YOUR_')) return; // 未設定
+function isStandalone() {
+  return navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+}
+
+async function subscribeToPush({ force = false } = {}) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+  if (VAPID_PUBLIC_KEY.startsWith('YOUR_')) return false;
   try {
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
+    // force=true のとき（再登録ボタン）は既存を破棄して新規作成
+    if (sub && force) {
+      await sub.unsubscribe();
+      sub = null;
+    }
     if (!sub) {
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -844,9 +854,10 @@ async function subscribeToPush() {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }),
     });
-    console.log('Push 購読登録済み');
+    return true;
   } catch (e) {
     console.warn('Push 購読失敗:', e);
+    return false;
   }
 }
 
@@ -934,6 +945,18 @@ function startReminderCheck() {
 function updateNotifPermissionBanner() {
   const banner = document.getElementById('notification-permission-banner');
   const denied = document.getElementById('notification-denied-banner');
+  const iosBanner = document.getElementById('ios-standalone-banner');
+
+  // iOSかつPWA未インストールの場合は専用バナーを表示
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isIos && !isStandalone()) {
+    iosBanner.classList.remove('hidden');
+    banner.classList.add('hidden');
+    denied.classList.add('hidden');
+    return;
+  }
+  iosBanner.classList.add('hidden');
+
   if (!('Notification' in window)) return;
   if (Notification.permission === 'granted') {
     banner.classList.add('hidden');
@@ -1083,10 +1106,13 @@ document.getElementById('btn-resubscribe').addEventListener('click', async () =>
   const btn = document.getElementById('btn-resubscribe');
   btn.textContent = '登録中...';
   btn.disabled = true;
-  await subscribeToPush();
+  const ok = await subscribeToPush({ force: true });
   await updatePushStatusUI();
-  btn.textContent = '通知を再登録する';
-  btn.disabled = false;
+  btn.textContent = ok ? '再登録しました ✓' : '通知を再登録する';
+  setTimeout(() => {
+    btn.textContent = '通知を再登録する';
+    btn.disabled = false;
+  }, 2000);
 });
 
 document.getElementById('btn-request-notif').addEventListener('click', async () => {
