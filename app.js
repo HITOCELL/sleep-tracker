@@ -1259,16 +1259,18 @@ async function syncToSheets(record) {
   const profile = loadProfile();
   if (!profile) return;
 
+  const s = loadSettings();
   const payload = {
-    userId:       profile.userId,
-    birthdate:    profile.birthdate,
-    gender:       profile.gender,
-    date:         dateKey(new Date(record.waketime)),
-    bedtime:      record.bedtime,
-    waketime:     record.waketime,
-    duration_min: Math.round(record.duration / 60000),
-    sleep_type:   record.type,
-    rating:       record.rating,
+    userId:          profile.userId,
+    birthdate:       profile.birthdate,
+    gender:          profile.gender,
+    date:            dateKey(new Date(record.waketime)),
+    bedtime:         record.bedtime,
+    waketime:        record.waketime,
+    duration_min:    Math.round(record.duration / 60000),
+    sleep_type:      record.type,
+    rating:          record.rating,
+    reminder_time:   s.reminderTime || '',
   };
 
   try {

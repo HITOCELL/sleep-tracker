@@ -73,7 +73,7 @@ export default {
       // data: プレフィックスのキーを全取得
       const { keys } = await env.SUBSCRIPTIONS.list({ prefix: 'data:' });
       const rows = [];
-      rows.push(['ユーザーID','生年月日','性別','日付','就寝時刻','起床時刻','睡眠時間(分)','睡眠タイプ','体調評価','保存日時'].join(','));
+      rows.push(['ユーザーID','生年月日','性別','日付','就寝時刻','起床時刻','睡眠時間(分)','睡眠タイプ','体調評価','就寝通知時間','保存日時'].join(','));
 
       for (const { name } of keys) {
         try {
@@ -81,16 +81,17 @@ export default {
           if (!raw) continue;
           const d = JSON.parse(raw);
           rows.push([
-            d.userId    || '',
-            d.birthdate || '',
-            d.gender    || '',
-            d.date      || '',
-            d.bedtime   || '',
-            d.waketime  || '',
-            d.duration_min != null ? d.duration_min : '',
-            d.sleep_type || '',
-            d.rating    != null ? d.rating : '',
-            d.savedAt   || '',
+            d.userId         || '',
+            d.birthdate      || '',
+            d.gender         || '',
+            d.date           || '',
+            d.bedtime        || '',
+            d.waketime       || '',
+            d.duration_min   != null ? d.duration_min : '',
+            d.sleep_type     || '',
+            d.rating         != null ? d.rating : '',
+            d.reminder_time  || '',
+            d.savedAt        || '',
           ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
         } catch {}
       }
