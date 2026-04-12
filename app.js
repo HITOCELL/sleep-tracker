@@ -978,6 +978,7 @@ function updateNotifPermissionBanner() {
 async function updatePushStatusUI() {
   const badge = document.getElementById('push-status-badge');
   const resubBtn = document.getElementById('btn-resubscribe');
+  const testBtn = document.getElementById('btn-test-push');
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     badge.textContent = '非対応';
     badge.className = 'push-status-badge';
@@ -990,9 +991,11 @@ async function updatePushStatusUI() {
       badge.textContent = '登録済み ✓';
       badge.className = 'push-status-badge subscribed';
       resubBtn.classList.add('hidden');
+      testBtn.classList.remove('hidden');
     } else {
       badge.textContent = '未登録';
       badge.className = 'push-status-badge not-subscribed';
+      testBtn.classList.add('hidden');
       const s = loadSettings();
       if (s.reminderEnabled && Notification.permission === 'granted') {
         resubBtn.classList.remove('hidden');
@@ -1118,6 +1121,41 @@ document.getElementById('btn-resubscribe').addEventListener('click', async () =>
     btn.textContent = '通知を再登録する';
     btn.disabled = false;
   }, 2000);
+});
+
+document.getElementById('btn-test-push').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-test-push');
+  btn.textContent = '送信中...';
+  btn.disabled = true;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      btn.textContent = '未登録 → 再登録してください';
+      setTimeout(() => { btn.textContent = 'テスト通知を送る'; btn.disabled = false; }, 3000);
+      return;
+    }
+    const res = await fetch(`${PUSH_SERVER_URL}/test-push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: sub.endpoint }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = '送信完了 ✓ 通知を確認してください';
+    } else if (data.error === 'not_registered') {
+      btn.textContent = 'サーバー未登録 → 再登録ボタンを押してください';
+      document.getElementById('btn-resubscribe').classList.remove('hidden');
+    } else if (res.status === 410) {
+      btn.textContent = '購読期限切れ → 再登録してください';
+      document.getElementById('btn-resubscribe').classList.remove('hidden');
+    } else {
+      btn.textContent = `エラー: ${data.error}`;
+    }
+  } catch (e) {
+    btn.textContent = `失敗: ${e.message}`;
+  }
+  setTimeout(() => { btn.textContent = 'テスト通知を送る'; btn.disabled = false; }, 5000);
 });
 
 document.getElementById('btn-request-notif').addEventListener('click', async () => {

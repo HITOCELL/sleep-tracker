@@ -41,6 +41,33 @@ export default {
       return corsResponse({ ok: true });
     }
 
+    // テスト通知（購読が届いているか確認用）
+    if (url.pathname === '/test-push' && request.method === 'POST') {
+      let body;
+      try { body = await request.json(); } catch {
+        return corsResponse({ error: 'Invalid JSON' }, 400);
+      }
+      const { endpoint } = body;
+      if (!endpoint) return corsResponse({ error: 'endpoint required' }, 400);
+      const raw = await env.SUBSCRIPTIONS.get(endpoint);
+      if (!raw) return corsResponse({ error: 'not_registered' }, 404);
+      const { subscription } = JSON.parse(raw);
+      webpush.setVapidDetails(env.VAPID_EMAIL, env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY);
+      try {
+        await webpush.sendNotification(
+          subscription,
+          JSON.stringify({ title: '神睡眠トラッカー', body: 'テスト通知です 🌙 通知が届いています！' }),
+        );
+        return corsResponse({ ok: true });
+      } catch (e) {
+        if (e.statusCode === 410) {
+          await env.SUBSCRIPTIONS.delete(endpoint);
+          return corsResponse({ error: 'expired' }, 410);
+        }
+        return corsResponse({ error: e.message }, 500);
+      }
+    }
+
     // ---- 睡眠データ受信（本部管理用） ----
     if (url.pathname === '/sleep-record' && request.method === 'POST') {
       let body;
@@ -133,10 +160,13 @@ async function sendReminders(env) {
 
       const { subscription, reminderTime, timezone } = JSON.parse(raw);
 
-      const localHHMM = new Intl.DateTimeFormat('en-GB', {
+      const parts = new Intl.DateTimeFormat('en-GB', {
         timeZone: timezone || 'Asia/Tokyo',
         hour: '2-digit', minute: '2-digit', hour12: false,
-      }).format(now);
+      }).formatToParts(now);
+      const hh = parts.find(p => p.type === 'hour')?.value ?? '00';
+      const mm = parts.find(p => p.type === 'minute')?.value ?? '00';
+      const localHHMM = `${hh}:${mm}`;
 
       if (localHHMM === reminderTime) {
         await webpush.sendNotification(
