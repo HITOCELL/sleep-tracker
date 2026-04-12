@@ -6,8 +6,10 @@
 // ---- Utility ----
 
 function b64u(buf) {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const bytes = new Uint8Array(buf);
+  let str = '';
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 function b64uDecode(s) {
@@ -46,8 +48,11 @@ async function createVapidJWT(endpoint, email, publicKeyB64u, privateKeyB64u) {
   const enc = new TextEncoder();
   const origin = new URL(endpoint).origin;
   const now = Math.floor(Date.now() / 1000);
+  // sub は mailto: または https: スキームが必要
+  const sub = email && (email.startsWith('mailto:') || email.startsWith('https:'))
+    ? email : `mailto:${email}`;
   const hdr = b64u(enc.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256' })));
-  const pld = b64u(enc.encode(JSON.stringify({ aud: origin, exp: now + 43200, sub: email })));
+  const pld = b64u(enc.encode(JSON.stringify({ aud: origin, exp: now + 43200, sub })));
   const msg = `${hdr}.${pld}`;
   const pub = b64uDecode(publicKeyB64u);
   const key = await crypto.subtle.importKey('jwk', {
@@ -260,6 +265,10 @@ export default {
 };
 
 async function sendReminders(env) {
+  if (!env.VAPID_EMAIL || !env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+    console.error('VAPID secrets not configured — set VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY');
+    return;
+  }
   const now = new Date();
   const { keys } = await env.SUBSCRIPTIONS.list();
 
