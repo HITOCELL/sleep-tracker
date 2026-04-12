@@ -5,7 +5,6 @@
 const DB_KEY = 'sleep_tracker_data';
 const SLEEP_KEY = 'sleep_tracker_pending';
 const PROFILE_KEY = 'sleep_tracker_profile';
-const SYNC_META_KEY = 'sleep_tracker_sync_meta';
 
 // ---- Data Layer ----
 // Data format: records[dateKey] = [ { bedtime, waketime, duration, rating, type }, ... ]
@@ -762,6 +761,10 @@ if ('serviceWorker' in navigator) {
 
 // Cloudflare Worker のデプロイ後に設定する
 const PUSH_SERVER_URL = 'https://sleep-tracker-push.ichikawa888.workers.dev';
+
+// Google Sheets 連携（本部管理用 — ユーザーには非公開）
+// GAS デプロイ後にURLを設定する
+const GAS_URL = '';
 const VAPID_PUBLIC_KEY = 'BF6ZnvMefM6NwoG_z0WLrYI1xXrPGsEyVNDJwnk8vDfKjoEo81bcnLYQ4jUl_0026Q6sZzrYLK8nfVlkB2xlMWg';
 
 const SETTINGS_KEY = 'sleep_tracker_settings';
@@ -1012,7 +1015,6 @@ async function openSettings() {
   timeInput.value = s.reminderTime || '23:00';
   updateNotifPermissionBanner();
   updatePushStatusUI();
-  initGasSettings();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -1253,14 +1255,8 @@ function checkOnboarding() {
 
 // ---- Google Sheets Sync ----
 
-function loadSyncMeta() {
-  try { return JSON.parse(localStorage.getItem(SYNC_META_KEY)) || {}; } catch { return {}; }
-}
-function saveSyncMeta(m) { localStorage.setItem(SYNC_META_KEY, JSON.stringify(m)); }
-
 async function syncToSheets(record) {
-  const s = loadSettings();
-  if (!s.gasUrl) return;
+  if (!GAS_URL) return;
   const profile = loadProfile();
   if (!profile) return;
 
@@ -1277,47 +1273,14 @@ async function syncToSheets(record) {
   };
 
   try {
-    await fetch(s.gasUrl, {
+    await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify(payload),
     });
-    const meta = loadSyncMeta();
-    meta.lastSync = new Date().toISOString();
-    saveSyncMeta(meta);
   } catch (e) {
-    console.warn('Sheets sync failed:', e);
+    // サイレントに失敗（ユーザーには通知しない）
   }
-}
-
-function initGasSettings() {
-  const input = document.getElementById('gas-url-input');
-  const saveBtn = document.getElementById('btn-save-gas-url');
-  const statusEl = document.getElementById('gas-save-status');
-  const lastSyncEl = document.getElementById('gas-last-sync');
-  if (!input) return;
-
-  const s = loadSettings();
-  input.value = s.gasUrl || '';
-
-  const meta = loadSyncMeta();
-  if (meta.lastSync) {
-    lastSyncEl.textContent = new Date(meta.lastSync).toLocaleString('ja-JP', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
-    lastSyncEl.className = 'push-status-badge subscribed';
-  }
-
-  saveBtn.onclick = () => {
-    const url = input.value.trim();
-    const s2 = loadSettings();
-    s2.gasUrl = url;
-    saveSettings(s2);
-    statusEl.textContent = '保存しました ✓';
-    statusEl.className = 'gas-save-status success';
-    statusEl.classList.remove('hidden');
-    setTimeout(() => statusEl.classList.add('hidden'), 2500);
-  };
 }
 
 // ---- Init ----
