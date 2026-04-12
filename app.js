@@ -1276,6 +1276,7 @@ async function syncToSheets(record) {
   try {
     await fetch(GAS_URL, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify(payload),
     });
