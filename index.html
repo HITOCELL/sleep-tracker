@@ -12,11 +12,12 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <canvas id="starfield"></canvas>
   <div id="app">
     <!-- Home View -->
     <div id="view-home" class="view active">
       <div class="home-header">
-        <h1>神睡眠トラッカー</h1>
+        <h1>神睡眠トラッカー<span class="app-version">v1.6</span></h1>
         <p class="date-display" id="today-date"></p>
         <button id="btn-settings" class="settings-btn" aria-label="設定">⚙️</button>
       </div>
@@ -63,8 +64,8 @@
         <h2 id="rating-greeting">おはよう！</h2>
         <p class="wake-info">睡眠時間: <span id="rating-duration"></span></p>
         <p class="sleep-type-label" id="sleep-type-label"></p>
-        <p class="rating-prompt">今の気分は？</p>
-        <p class="rating-scale-hint">1（最高） ← → 10（最悪）</p>
+        <p class="rating-prompt">眠れた？</p>
+        <p class="rating-scale-hint">😫 最悪 ←――――→ 熟睡 🌙</p>
         <div class="rating-grid" id="rating-grid"></div>
       </div>
 
@@ -185,6 +186,12 @@
         <div id="notification-denied-banner" class="notif-banner notif-denied hidden">
           <p>通知がブロックされています。<br>ブラウザの設定から通知を許可してください。</p>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-heading">🔄 アプリ更新</h3>
+        <p class="settings-desc">最新版が反映されない場合はこちらからキャッシュをクリアできます</p>
+        <button id="btn-clear-cache" class="clear-cache-btn">アップデートを確認して再読み込み</button>
       </div>
     </div>
   </div>

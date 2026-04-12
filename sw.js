@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sleep-tracker-v4';
+const CACHE_NAME = 'sleep-tracker-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -24,9 +24,21 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
-  );
+  const url = new URL(e.request.url);
+  const isAppAsset = ['.html', '.css', '.js'].some(ext => url.pathname.endsWith(ext))
+    || url.pathname === '/' || url.pathname.endsWith('/');
+
+  if (isAppAsset) {
+    // Network-first: 常に最新版を取得、失敗時のみキャッシュ
+    e.respondWith(
+      fetch(e.request).then(res => {
+        caches.open(CACHE_NAME).then(c => c.put(e.request, res.clone()));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+  } else {
+    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+  }
 });
 
 // Web Push（サーバーからのプッシュ）

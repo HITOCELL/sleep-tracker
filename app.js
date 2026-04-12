@@ -66,15 +66,15 @@ function formatDurationShort(ms) {
 }
 
 function ratingColor(r) {
-  if (r <= 3) return '#4ecdc4';
-  if (r <= 6) return '#ffe66d';
-  if (r <= 8) return '#ff9f43';
+  if (r >= 8) return '#4ecdc4';
+  if (r >= 5) return '#ffe66d';
+  if (r >= 3) return '#ff9f43';
   return '#ff6b6b';
 }
 
 function ratingClass(r) {
-  if (r <= 3) return 'good';
-  if (r <= 6) return 'ok';
+  if (r >= 8) return 'good';
+  if (r >= 5) return 'ok';
   return 'bad';
 }
 
@@ -234,10 +234,11 @@ document.getElementById('btn-wake-from-sleep').addEventListener('click', handleW
 function buildRatingGrid() {
   const grid = document.getElementById('rating-grid');
   grid.innerHTML = '';
+  const emojis = ['😫','😩','😔','😟','😐','🙂','😊','😌','💤','🌙'];
   for (let i = 1; i <= 10; i++) {
     const btn = document.createElement('button');
     btn.className = `rating-btn r${i}`;
-    btn.textContent = i;
+    btn.innerHTML = `<span class="rating-num">${i}</span><span class="rating-emoji">${emojis[i-1]}</span>`;
     btn.addEventListener('click', () => saveRecord(i));
     grid.appendChild(btn);
   }
@@ -960,6 +961,20 @@ function closeSettings() {
 
 document.getElementById('btn-settings').addEventListener('click', openSettings);
 document.getElementById('settings-close').addEventListener('click', closeSettings);
+document.getElementById('btn-clear-cache').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-clear-cache');
+  btn.textContent = 'クリア中...';
+  btn.disabled = true;
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  } catch {}
+  location.reload();
+});
 document.getElementById('settings-modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeSettings();
 });
@@ -1000,6 +1015,63 @@ document.getElementById('btn-request-notif').addEventListener('click', async () 
     await subscribeToPush();
   }
 });
+
+// ---- Starfield ----
+
+(function () {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function initStars() {
+    stars = [];
+    // Small dim stars
+    for (let i = 0; i < 120; i++) {
+      stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.0 + 0.2, speed: Math.random() * 0.015 + 0.003, phase: Math.random() * Math.PI * 2, bright: false });
+    }
+    // Medium stars
+    for (let i = 0; i < 25; i++) {
+      stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.2 + 1.0, speed: Math.random() * 0.008 + 0.002, phase: Math.random() * Math.PI * 2, bright: false });
+    }
+    // Bright glowing stars
+    for (let i = 0; i < 8; i++) {
+      stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.0 + 2.0, speed: Math.random() * 0.005 + 0.001, phase: Math.random() * Math.PI * 2, bright: true });
+    }
+  }
+
+  function draw(ts) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const w = canvas.width, h = canvas.height;
+    stars.forEach(s => {
+      const alpha = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(ts * s.speed + s.phase));
+      const x = s.x * w, y = s.y * h;
+      if (s.bright) {
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, s.r * 4);
+        glow.addColorStop(0, `rgba(200, 210, 255, ${alpha})`);
+        glow.addColorStop(1, 'rgba(200, 210, 255, 0)');
+        ctx.beginPath();
+        ctx.arc(x, y, s.r * 4, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+      }
+      ctx.beginPath();
+      ctx.arc(x, y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(220, 225, 255, ${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  resize();
+  initStars();
+  requestAnimationFrame(draw);
+})();
 
 // ---- Init ----
 
