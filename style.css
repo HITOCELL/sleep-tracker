@@ -963,6 +963,11 @@ canvas {
 .notif-denied {
   border-left-color: var(--accent);
 }
+.app-version-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
 .clear-cache-btn {
   width: 100%;
   padding: 12px;
