@@ -4,6 +4,8 @@
 
 const DB_KEY = 'sleep_tracker_data';
 const SLEEP_KEY = 'sleep_tracker_pending';
+const PROFILE_KEY = 'sleep_tracker_profile';
+const SYNC_META_KEY = 'sleep_tracker_sync_meta';
 
 // ---- Data Layer ----
 // Data format: records[dateKey] = [ { bedtime, waketime, duration, rating, type }, ... ]
@@ -255,20 +257,21 @@ function saveRecord(rating) {
   const duration = wakeTime - bedtime;
   const type = classifySleep(pending.bedtime, duration);
 
-  // Record goes to the wake-up date
   const key = dateKey(wakeTime);
-
   const records = loadRecords();
   if (!records[key]) records[key] = [];
-  records[key].push({
+
+  const newRecord = {
     bedtime: pending.bedtime,
     waketime: wakeTimeISO,
     duration: duration,
     rating: rating,
-    type: type
-  });
+    type: type,
+  };
+  records[key].push(newRecord);
 
   saveRecords(records);
+  syncToSheets(newRecord); // fire-and-forget
   setPendingSleep(null);
   wakeTimeISO = null;
   document.body.classList.remove('dawn');
@@ -1009,6 +1012,7 @@ async function openSettings() {
   timeInput.value = s.reminderTime || '23:00';
   updateNotifPermissionBanner();
   updatePushStatusUI();
+  initGasSettings();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -1185,8 +1189,140 @@ document.getElementById('btn-request-notif').addEventListener('click', async () 
   requestAnimationFrame(draw);
 })();
 
+// ---- Profile ----
+
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || null; } catch { return null; }
+}
+function saveProfile(p) { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); }
+
+function generateUUID() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+function initOnboarding() {
+  const yearSel = document.getElementById('ob-year');
+  const monthSel = document.getElementById('ob-month');
+  const daySel = document.getElementById('ob-day');
+  const cur = new Date().getFullYear();
+
+  // Year
+  yearSel.innerHTML = '<option value="">年</option>';
+  for (let y = cur; y >= cur - 100; y--) {
+    yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+  }
+  // Month
+  monthSel.innerHTML = '<option value="">月</option>';
+  for (let m = 1; m <= 12; m++) {
+    monthSel.innerHTML += `<option value="${String(m).padStart(2,'0')}">${m}</option>`;
+  }
+  // Day
+  daySel.innerHTML = '<option value="">日</option>';
+  for (let d = 1; d <= 31; d++) {
+    daySel.innerHTML += `<option value="${String(d).padStart(2,'0')}">${d}</option>`;
+  }
+
+  document.getElementById('ob-submit').addEventListener('click', () => {
+    const year = yearSel.value, month = monthSel.value, day = daySel.value;
+    const gender = document.querySelector('input[name="ob-gender"]:checked');
+    const errEl = document.getElementById('ob-error');
+    if (!year || !month || !day || !gender) {
+      errEl.classList.remove('hidden'); return;
+    }
+    errEl.classList.add('hidden');
+    saveProfile({
+      userId: generateUUID(),
+      birthdate: `${year}-${month}-${day}`,
+      gender: gender.value,
+      registeredAt: new Date().toISOString(),
+    });
+    document.getElementById('onboarding-overlay').classList.add('hidden');
+  });
+}
+
+function checkOnboarding() {
+  if (!loadProfile()) {
+    document.getElementById('onboarding-overlay').classList.remove('hidden');
+    initOnboarding();
+  }
+}
+
+// ---- Google Sheets Sync ----
+
+function loadSyncMeta() {
+  try { return JSON.parse(localStorage.getItem(SYNC_META_KEY)) || {}; } catch { return {}; }
+}
+function saveSyncMeta(m) { localStorage.setItem(SYNC_META_KEY, JSON.stringify(m)); }
+
+async function syncToSheets(record) {
+  const s = loadSettings();
+  if (!s.gasUrl) return;
+  const profile = loadProfile();
+  if (!profile) return;
+
+  const payload = {
+    userId:       profile.userId,
+    birthdate:    profile.birthdate,
+    gender:       profile.gender,
+    date:         dateKey(new Date(record.waketime)),
+    bedtime:      record.bedtime,
+    waketime:     record.waketime,
+    duration_min: Math.round(record.duration / 60000),
+    sleep_type:   record.type,
+    rating:       record.rating,
+  };
+
+  try {
+    await fetch(s.gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify(payload),
+    });
+    const meta = loadSyncMeta();
+    meta.lastSync = new Date().toISOString();
+    saveSyncMeta(meta);
+  } catch (e) {
+    console.warn('Sheets sync failed:', e);
+  }
+}
+
+function initGasSettings() {
+  const input = document.getElementById('gas-url-input');
+  const saveBtn = document.getElementById('btn-save-gas-url');
+  const statusEl = document.getElementById('gas-save-status');
+  const lastSyncEl = document.getElementById('gas-last-sync');
+  if (!input) return;
+
+  const s = loadSettings();
+  input.value = s.gasUrl || '';
+
+  const meta = loadSyncMeta();
+  if (meta.lastSync) {
+    lastSyncEl.textContent = new Date(meta.lastSync).toLocaleString('ja-JP', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+    lastSyncEl.className = 'push-status-badge subscribed';
+  }
+
+  saveBtn.onclick = () => {
+    const url = input.value.trim();
+    const s2 = loadSettings();
+    s2.gasUrl = url;
+    saveSettings(s2);
+    statusEl.textContent = '保存しました ✓';
+    statusEl.className = 'gas-save-status success';
+    statusEl.classList.remove('hidden');
+    setTimeout(() => statusEl.classList.add('hidden'), 2500);
+  };
+}
+
 // ---- Init ----
 
+checkOnboarding();
 startReminderCheck();
 // 既存のlocalStorage設定をIndexedDBに同期（SW共有のため）
 saveSettingsToDB(loadSettings());

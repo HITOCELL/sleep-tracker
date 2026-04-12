@@ -215,11 +215,64 @@
       </div>
 
       <div class="settings-section">
+        <h3 class="settings-heading">📊 Google Sheets 連携</h3>
+        <p class="settings-desc">Google Apps Script のURLを設定すると、記録保存のたびにスプレッドシートへ自動送信されます。</p>
+        <input type="url" id="gas-url-input" class="gas-url-input"
+               placeholder="https://script.google.com/macros/s/..."
+               autocomplete="off" spellcheck="false">
+        <div class="gas-url-actions">
+          <button id="btn-save-gas-url" class="gas-save-btn">URLを保存</button>
+          <span id="gas-save-status" class="gas-save-status hidden"></span>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label">
+            <span class="settings-row-title">最終同期</span>
+          </div>
+          <span id="gas-last-sync" class="push-status-badge">未同期</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
         <h3 class="settings-heading">🔄 アプリ更新</h3>
         <p class="settings-desc">最新版が反映されない場合はこちらからキャッシュをクリアできます</p>
-        <p class="app-version-label">現在のバージョン: v1.7</p>
+        <p class="app-version-label">現在のバージョン: v2.0</p>
         <button id="btn-clear-cache" class="clear-cache-btn">アップデートを確認して再読み込み</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Overlay -->
+  <div id="onboarding-overlay" class="onboarding-overlay hidden">
+    <div class="onboarding-card">
+      <div class="onboarding-stars">✦ ✧ ✦</div>
+      <h2 class="onboarding-title">神睡眠トラッカーへようこそ</h2>
+      <p class="onboarding-sub">より良い睡眠分析のために<br>基本情報を教えてください<br><small>名前・住所などの個人情報は収集しません</small></p>
+
+      <div class="onboarding-field">
+        <label class="onboarding-label">生年月日</label>
+        <div class="onboarding-dob">
+          <select id="ob-year" class="ob-select"></select>
+          <span class="ob-sep">年</span>
+          <select id="ob-month" class="ob-select"></select>
+          <span class="ob-sep">月</span>
+          <select id="ob-day" class="ob-select"></select>
+          <span class="ob-sep">日</span>
+        </div>
+      </div>
+
+      <div class="onboarding-field">
+        <label class="onboarding-label">性別</label>
+        <div class="ob-gender-group">
+          <label class="ob-gender-btn"><input type="radio" name="ob-gender" value="男性"><span>男性</span></label>
+          <label class="ob-gender-btn"><input type="radio" name="ob-gender" value="女性"><span>女性</span></label>
+          <label class="ob-gender-btn"><input type="radio" name="ob-gender" value="その他"><span>その他</span></label>
+          <label class="ob-gender-btn"><input type="radio" name="ob-gender" value="回答しない"><span>回答しない</span></label>
+        </div>
+      </div>
+
+      <p id="ob-error" class="ob-error hidden">生年月日と性別を選択してください</p>
+      <button id="ob-submit" class="ob-submit-btn">はじめる →</button>
+      <p class="ob-privacy">🔒 データはデバイス内にのみ保存されます</p>
     </div>
   </div>
 

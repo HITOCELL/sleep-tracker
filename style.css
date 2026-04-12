@@ -1157,3 +1157,214 @@ canvas {
 .view.active {
   animation: fadeIn 0.25s ease;
 }
+
+/* ============================================================
+   Onboarding Overlay
+   ============================================================ */
+
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 8, 22, 0.97);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.onboarding-overlay.hidden { display: none !important; }
+
+.onboarding-card {
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 28px;
+  padding: 36px 28px 30px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  animation: slideUp 0.35s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.onboarding-stars {
+  font-size: 18px;
+  letter-spacing: 8px;
+  color: var(--primary-light);
+  margin-bottom: 18px;
+  opacity: 0.7;
+}
+
+.onboarding-title {
+  font-size: 21px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-light), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+}
+
+.onboarding-sub {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+.onboarding-sub small {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.onboarding-field {
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.onboarding-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.onboarding-dob {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ob-select {
+  background: var(--surface2);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  padding: 10px 6px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+.ob-select:focus { outline: none; border-color: var(--primary); }
+#ob-year  { width: 88px; }
+#ob-month { width: 60px; }
+#ob-day   { width: 60px; }
+
+.ob-sep {
+  font-size: 15px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.ob-gender-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ob-gender-btn { position: relative; cursor: pointer; }
+.ob-gender-btn input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ob-gender-btn span {
+  display: block;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--surface2);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.ob-gender-btn input:checked + span {
+  background: rgba(108,99,255,0.18);
+  border-color: var(--primary);
+  color: var(--primary-light);
+}
+
+.ob-error {
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.ob-submit-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 6px 24px rgba(108,99,255,0.35);
+  margin-bottom: 14px;
+  transition: transform 0.15s;
+}
+.ob-submit-btn:active { transform: scale(0.97); }
+
+.ob-privacy {
+  font-size: 12px;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+/* ============================================================
+   Google Sheets Settings
+   ============================================================ */
+
+.gas-url-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 10px 12px;
+  margin: 6px 0 10px;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.gas-url-input:focus { outline: none; border-color: var(--primary); }
+.gas-url-input::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+.gas-url-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.gas-save-btn {
+  padding: 8px 18px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary-light);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.gas-save-btn:active { background: rgba(108,99,255,0.12); }
+
+.gas-save-status { font-size: 13px; font-weight: 500; }
+.gas-save-status.success { color: var(--success); }
+.gas-save-status.hidden { display: none; }
