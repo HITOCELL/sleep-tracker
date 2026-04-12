@@ -947,13 +947,45 @@ function updateNotifPermissionBanner() {
   }
 }
 
-function openSettings() {
+async function updatePushStatusUI() {
+  const badge = document.getElementById('push-status-badge');
+  const resubBtn = document.getElementById('btn-resubscribe');
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    badge.textContent = '非対応';
+    badge.className = 'push-status-badge';
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      badge.textContent = '登録済み ✓';
+      badge.className = 'push-status-badge subscribed';
+      resubBtn.classList.add('hidden');
+    } else {
+      badge.textContent = '未登録';
+      badge.className = 'push-status-badge not-subscribed';
+      const s = loadSettings();
+      if (s.reminderEnabled && Notification.permission === 'granted') {
+        resubBtn.classList.remove('hidden');
+      } else {
+        resubBtn.classList.add('hidden');
+      }
+    }
+  } catch {
+    badge.textContent = 'エラー';
+    badge.className = 'push-status-badge';
+  }
+}
+
+async function openSettings() {
   const s = loadSettings();
   const toggle = document.getElementById('reminder-toggle');
   const timeInput = document.getElementById('reminder-time');
   toggle.checked = !!s.reminderEnabled;
   timeInput.value = s.reminderTime || '23:00';
   updateNotifPermissionBanner();
+  updatePushStatusUI();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -990,9 +1022,11 @@ document.getElementById('reminder-toggle').addEventListener('change', async e =>
       updateNotifPermissionBanner();
     } else if (Notification.permission === 'granted') {
       await subscribeToPush();
+      await updatePushStatusUI();
     }
   } else {
     await unsubscribeFromPush();
+    await updatePushStatusUI();
   }
 });
 
@@ -1003,6 +1037,16 @@ document.getElementById('reminder-time').addEventListener('change', async e => {
   if (s.reminderEnabled && Notification.permission === 'granted') {
     await updatePushReminderTime(e.target.value);
   }
+});
+
+document.getElementById('btn-resubscribe').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-resubscribe');
+  btn.textContent = '登録中...';
+  btn.disabled = true;
+  await subscribeToPush();
+  await updatePushStatusUI();
+  btn.textContent = '通知を再登録する';
+  btn.disabled = false;
 });
 
 document.getElementById('btn-request-notif').addEventListener('click', async () => {

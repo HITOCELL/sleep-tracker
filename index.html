@@ -181,6 +181,14 @@
           <input type="time" id="reminder-time" class="time-input" value="23:00">
         </div>
 
+        <div class="settings-row" id="push-status-row">
+          <div class="settings-row-label">
+            <span class="settings-row-title">通知登録状態</span>
+          </div>
+          <span id="push-status-badge" class="push-status-badge">確認中...</span>
+        </div>
+        <button id="btn-resubscribe" class="resubscribe-btn hidden">通知を再登録する</button>
+
         <div id="notification-permission-banner" class="notif-banner hidden">
           <p>通知を受け取るには許可が必要です</p>
           <button id="btn-request-notif" class="btn-request-notif">通知を許可する</button>
