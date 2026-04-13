@@ -255,6 +255,16 @@ export default {
       });
     }
 
+    // 購読確認（アプリがサーバー登録を検証するため）
+    if (url.pathname === '/subscription-status' && request.method === 'GET') {
+      const endpoint = url.searchParams.get('endpoint');
+      if (!endpoint) return corsResponse({ error: 'endpoint required' }, 400);
+      const raw = await env.SUBSCRIPTIONS.get(endpoint);
+      if (!raw) return corsResponse({ registered: false });
+      const { reminderTime, timezone } = JSON.parse(raw);
+      return corsResponse({ registered: true, reminderTime, timezone });
+    }
+
     return new Response('Not found', { status: 404 });
   },
 

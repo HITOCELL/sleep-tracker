@@ -763,6 +763,22 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// バックグラウンド→前面に戻った時にPush購読をサーバーと再同期
+// （iOS でアプリを閉じた後に購読が失効していても自動復旧）
+document.addEventListener('visibilitychange', async () => {
+  if (!document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    const s = loadSettings();
+    if (s.reminderEnabled) {
+      const ok = await subscribeToPush();
+      if (!ok) {
+        // 購読失敗 → force で新規作成
+        await subscribeToPush({ force: true });
+      }
+      await updatePushStatusUI();
+    }
+  }
+});
+
 // ---- Bedtime Reminder ----
 
 // Cloudflare Worker のデプロイ後に設定する
@@ -856,7 +872,7 @@ async function subscribeToPush({ force = false } = {}) {
       });
     }
     const s = loadSettings();
-    await fetch(`${PUSH_SERVER_URL}/subscribe`, {
+    const res = await fetch(`${PUSH_SERVER_URL}/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -865,6 +881,11 @@ async function subscribeToPush({ force = false } = {}) {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       }),
     });
+    if (!res.ok) {
+      const msg = await res.text().catch(() => String(res.status));
+      throw new Error(`Push server error ${res.status}: ${msg}`);
+    }
+    console.log('Push 購読済み ✓');
     return true;
   } catch (e) {
     console.warn('Push 購読失敗:', e);
@@ -997,10 +1018,33 @@ async function updatePushStatusUI() {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
-      badge.textContent = '登録済み ✓';
-      badge.className = 'push-status-badge subscribed';
-      resubBtn.classList.add('hidden');
-      testBtn.classList.remove('hidden');
+      // ブラウザ側に購読あり → サーバー側も確認
+      let serverOk = false;
+      try {
+        const res = await fetch(
+          `${PUSH_SERVER_URL}/subscription-status?endpoint=${encodeURIComponent(sub.endpoint)}`,
+          { signal: AbortSignal.timeout(5000) }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          serverOk = data.registered === true;
+        }
+      } catch {}
+
+      if (serverOk) {
+        badge.textContent = '登録済み ✓';
+        badge.className = 'push-status-badge subscribed';
+        resubBtn.classList.add('hidden');
+        testBtn.classList.remove('hidden');
+      } else {
+        // ブラウザにあるがサーバーにない → 再登録促す
+        badge.textContent = 'サーバー未登録 ⚠';
+        badge.className = 'push-status-badge not-subscribed';
+        testBtn.classList.add('hidden');
+        resubBtn.classList.remove('hidden');
+        // 自動で再登録試行
+        subscribeToPush();
+      }
     } else {
       badge.textContent = '未登録';
       badge.className = 'push-status-badge not-subscribed';
