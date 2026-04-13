@@ -998,6 +998,19 @@ function updateNotifPermissionBanner() {
   // iOSのスタンドアロン+通知許可済み → ロック画面・集中モード設定ガイドを表示
   if (isIos && isStandalone() && 'Notification' in window && Notification.permission === 'granted') {
     iosGuide.classList.remove('hidden');
+    // iOS バージョン検出と設定場所をガイドに反映
+    const iosVer = (navigator.userAgent.match(/OS (\d+)_/) || [])[1];
+    const verNum = iosVer ? parseInt(iosVer) : 0;
+    const domain = location.hostname; // 例: hitocell.github.io
+    const iosVerEl = document.getElementById('ios-version-info');
+    if (iosVerEl) {
+      if (verNum > 0 && verNum < 16) {
+        iosVerEl.textContent = `⚠️ あなたのiOS ${iosVer} はバックグラウンド通知非対応です。iOS 16.4以降へのアップデートが必要です。`;
+        iosVerEl.style.color = '#ff6b6b';
+      } else {
+        iosVerEl.textContent = `iOS ${iosVer || '?'} 検出 — 「設定」→「通知」に「${domain}」または「神睡眠」の項目があれば、ロック画面をONにしてください。`;
+      }
+    }
   } else {
     iosGuide.classList.add('hidden');
   }
