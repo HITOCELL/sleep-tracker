@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sleep-tracker-v23';
+const CACHE_NAME = 'sleep-tracker-v24';
 const ASSETS = [
   './',
   './index.html',
@@ -53,7 +53,9 @@ self.addEventListener('push', e => {
       icon: 'icon-192.png',
       badge: 'icon-192.png',
       tag: 'bedtime-reminder',
-      requireInteraction: false,
+      requireInteraction: true,
+      silent: false,
+      vibrate: [200, 100, 200],
     })
   );
 });
@@ -122,7 +124,9 @@ async function checkAndShowReminder() {
       icon: 'icon-192.png',
       badge: 'icon-192.png',
       tag: 'bedtime-reminder',
-      requireInteraction: false,
+      requireInteraction: true,
+      silent: false,
+      vibrate: [200, 100, 200],
     });
   }
 }

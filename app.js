@@ -926,7 +926,9 @@ async function showBedtimeNotification() {
     icon: 'icon-192.png',
     badge: 'icon-192.png',
     tag: 'bedtime-reminder',
-    requireInteraction: false,
+    requireInteraction: true,
+    silent: false,
+    vibrate: [200, 100, 200],
   };
   if ('serviceWorker' in navigator) {
     try {
