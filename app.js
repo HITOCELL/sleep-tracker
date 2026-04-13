@@ -954,9 +954,6 @@ async function showBedtimeNotification() {
     badge: 'icon-192.png',
     tag: 'bedtime-reminder',
     renotify: true,
-    requireInteraction: false,
-    silent: false,
-    vibrate: [200, 100, 200],
   };
   if ('serviceWorker' in navigator) {
     try {
@@ -1005,10 +1002,10 @@ function updateNotifPermissionBanner() {
     const iosVerEl = document.getElementById('ios-version-info');
     if (iosVerEl) {
       if (verNum > 0 && verNum < 16) {
-        iosVerEl.textContent = `⚠️ あなたのiOS ${iosVer} はバックグラウンド通知非対応です。iOS 16.4以降へのアップデートが必要です。`;
+        iosVerEl.textContent = `⚠️ iOS ${iosVer} はバックグラウンド通知非対応です。iOS 16.4以降へのアップデートが必要です。`;
         iosVerEl.style.color = '#ff6b6b';
       } else {
-        iosVerEl.textContent = `iOS ${iosVer || '?'} 検出 — 「設定」→「通知」に「${domain}」または「神睡眠」の項目があれば、ロック画面をONにしてください。`;
+        iosVerEl.innerHTML = `iOS ${iosVer || '?'} を検出。「設定」→「通知」に「<strong>${domain}</strong>」または「<strong>神睡眠</strong>」の項目を探してください。`;
       }
     }
   } else {
