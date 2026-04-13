@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sleep-tracker-v25';
+const CACHE_NAME = 'sleep-tracker-v26';
 const ASSETS = [
   './',
   './index.html',
@@ -53,9 +53,30 @@ self.addEventListener('push', e => {
       icon: 'icon-192.png',
       badge: 'icon-192.png',
       tag: 'bedtime-reminder',
+      renotify: true,
       requireInteraction: false,
       silent: false,
       vibrate: [200, 100, 200],
+    })
+  );
+});
+
+// Push 購読期限切れ → アプリに再登録を依頼
+self.addEventListener('pushsubscriptionchange', e => {
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        c.postMessage({ type: 'push-resubscribe' });
+      }
+      // クライアントが起動していない場合は通知で知らせる
+      if (list.length === 0) {
+        return self.registration.showNotification('神睡眠トラッカー', {
+          body: '通知の再設定が必要です。アプリを開いてください。',
+          icon: 'icon-192.png',
+          badge: 'icon-192.png',
+          tag: 'resubscribe-required',
+        });
+      }
     })
   );
 });
@@ -124,6 +145,7 @@ async function checkAndShowReminder() {
       icon: 'icon-192.png',
       badge: 'icon-192.png',
       tag: 'bedtime-reminder',
+      renotify: true,
       requireInteraction: false,
       silent: false,
       vibrate: [200, 100, 200],

@@ -755,6 +755,12 @@ function renderCorrelation(data) {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Push 購読期限切れ時に SW から再登録依頼を受け取る
+  navigator.serviceWorker.addEventListener('message', async e => {
+    if (e.data?.type === 'push-resubscribe') {
+      await subscribeToPush({ force: true });
+    }
+  });
 }
 
 // ---- Bedtime Reminder ----
@@ -926,6 +932,7 @@ async function showBedtimeNotification() {
     icon: 'icon-192.png',
     badge: 'icon-192.png',
     tag: 'bedtime-reminder',
+    renotify: true,
     requireInteraction: false,
     silent: false,
     vibrate: [200, 100, 200],
