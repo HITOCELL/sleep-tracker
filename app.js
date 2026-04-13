@@ -981,16 +981,26 @@ function updateNotifPermissionBanner() {
   const banner = document.getElementById('notification-permission-banner');
   const denied = document.getElementById('notification-denied-banner');
   const iosBanner = document.getElementById('ios-standalone-banner');
+  const iosGuide = document.getElementById('ios-notif-guide');
+
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
   // iOSかつPWA未インストールの場合は専用バナーを表示
-  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if (isIos && !isStandalone()) {
     iosBanner.classList.remove('hidden');
     banner.classList.add('hidden');
     denied.classList.add('hidden');
+    iosGuide.classList.add('hidden');
     return;
   }
   iosBanner.classList.add('hidden');
+
+  // iOSのスタンドアロン+通知許可済み → ロック画面・集中モード設定ガイドを表示
+  if (isIos && isStandalone() && 'Notification' in window && Notification.permission === 'granted') {
+    iosGuide.classList.remove('hidden');
+  } else {
+    iosGuide.classList.add('hidden');
+  }
 
   if (!('Notification' in window)) return;
   if (Notification.permission === 'granted') {

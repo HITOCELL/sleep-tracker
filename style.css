@@ -1057,6 +1057,24 @@ canvas {
 .notif-denied {
   border-left-color: var(--accent);
 }
+.ios-guide {
+  border-left-color: #7b8cde;
+}
+.ios-guide-list {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  padding-left: 18px;
+  margin: 8px 0 4px;
+}
+.ios-guide-list li {
+  margin-bottom: 4px;
+}
+.ios-guide-note {
+  font-size: 11px;
+  color: var(--text-muted, #555);
+  margin-top: 4px;
+}
 .app-version-label {
   font-size: 12px;
   color: var(--text-dim);
